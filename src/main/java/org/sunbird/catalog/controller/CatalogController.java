@@ -29,7 +29,7 @@ public class CatalogController {
 		return new ResponseEntity<>(response, response.getResponseCode());
 	}
 
-	@GetMapping("/sector/{sectorId}")
+	@GetMapping("/sector/read/{sectorId}")
 	public ResponseEntity<SBApiResponse> readSector(@PathVariable("sectorId") String sectorId) {
 		SBApiResponse response = catalogService.readSector(sectorId);
 		return new ResponseEntity<>(response, response.getResponseCode());

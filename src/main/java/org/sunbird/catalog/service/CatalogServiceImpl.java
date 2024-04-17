@@ -97,7 +97,7 @@ public class CatalogServiceImpl {
 
 			StringBuilder strUrl = new StringBuilder(extServerProperties.getKmBaseHost());
 			strUrl.append(extServerProperties.getKmFrameworkTermSearchPath()).append("?framework=")
-					.append(extServerProperties.getTaxonomyFrameWorkName()).append("&category=")
+					.append(extServerProperties.getSectorFrameworkName()).append("&category=")
 					.append(extServerProperties.getSectorCategoryName());
 
 			Map<String, Object> termResponse = outboundRequestHandlerServiceImpl.fetchResultUsingPost(strUrl.toString(),
@@ -163,7 +163,7 @@ public class CatalogServiceImpl {
 		try {
 			StringBuilder strUrl = new StringBuilder(extServerProperties.getKmBaseHost());
 			strUrl.append(extServerProperties.getKmFrameworkTermReadPath()).append("/").append(sectorId).append("?framework=")
-					.append(extServerProperties.getTaxonomyFrameWorkName()).append("&category=")
+					.append(extServerProperties.getSectorFrameworkName()).append("&category=")
 					.append(extServerProperties.getSectorCategoryName());
 
 			Map<String, Object> sectorMap = new HashMap<String, Object>();
@@ -214,7 +214,7 @@ public class CatalogServiceImpl {
 			// Resource is not found... we can create sector.
 			reqBody.put(Constants.CODE, name);
 			Map<String, Object> parentObj = new HashMap<>();
-			parentObj.put(Constants.IDENTIFIER, extServerProperties.getTaxonomyFrameWorkName() + "_" + extServerProperties.getSectorCategoryName());
+			parentObj.put(Constants.IDENTIFIER, extServerProperties.getSectorFrameworkName() + "_" + extServerProperties.getSectorCategoryName());
 			reqBody.put(Constants.PARENTS, Arrays.asList(parentObj));
 			Map<String, Object> termReq = new HashMap<String, Object>();
 			termReq.put(Constants.TERM, reqBody);
@@ -223,7 +223,7 @@ public class CatalogServiceImpl {
 
 			StringBuilder strUrl = new StringBuilder(extServerProperties.getKmBaseHost());
 			strUrl.append(extServerProperties.getKmFrameworkTermCreatePath()).append("?framework=")
-					.append(extServerProperties.getTaxonomyFrameWorkName()).append("&category=")
+					.append(extServerProperties.getSectorFrameworkName()).append("&category=")
 					.append(extServerProperties.getSectorCategoryName());
 			Map<String, Object> termResponse = outboundRequestHandlerServiceImpl.fetchResultUsingPost(strUrl.toString(),
 					createReq, null);
@@ -284,7 +284,7 @@ public class CatalogServiceImpl {
 					termReq.put(Constants.NAME, name);
 
 					Map<String, Object> parentObj = new HashMap<>();
-					parentObj.put(Constants.IDENTIFIER, extServerProperties.getTaxonomyFrameWorkName() + "_" + extServerProperties.getSectorCategoryName() + "_" + id);
+					parentObj.put(Constants.IDENTIFIER, extServerProperties.getSectorFrameworkName() + "_" + extServerProperties.getSectorCategoryName() + "_" + id);
 					termReq.put(Constants.PARENTS, Arrays.asList(parentObj));
 					requestBody.put(Constants.TERM, termReq);
 					Map<String, Object> createReq = new HashMap<String, Object>();
@@ -292,7 +292,7 @@ public class CatalogServiceImpl {
 
 					StringBuilder strUrl = new StringBuilder(extServerProperties.getKmBaseHost());
 					strUrl.append(extServerProperties.getKmFrameworkTermCreatePath()).append("?framework=")
-							.append(extServerProperties.getTaxonomyFrameWorkName()).append("&category=")
+							.append(extServerProperties.getSectorFrameworkName()).append("&category=")
 							.append(extServerProperties.getSectorCategoryName());
 					Map<String, Object> termResponse = outboundRequestHandlerServiceImpl.fetchResultUsingPost(strUrl.toString(),
 							createReq, null);

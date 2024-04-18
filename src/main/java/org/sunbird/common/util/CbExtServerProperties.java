@@ -705,6 +705,15 @@ public class CbExtServerProperties {
 	@Value("${sector.category.name}")
 	private String sectorCategoryName;
 
+	@Value("${km.framework.term.read.path}")
+	private String kmFrameworkTermReadPath;
+
+	@Value("${km.framework.term.create.path}")
+	private String kmFrameworkTermCreatePath;
+
+	@Value("${sector.framework.name}")
+	private String sectorFrameworkName;
+
 	public boolean qListFromCacheEnabled() {
 		return qListFromCacheEnabled;
 	}
@@ -2489,5 +2498,29 @@ public class CbExtServerProperties {
 
 	public void setSubSectorFields(String subSectorFields) {
 		this.subSectorFields = subSectorFields;
+	}
+
+	public String getKmFrameworkTermReadPath() {
+		return kmFrameworkTermReadPath;
+	}
+
+	public void setKmFrameworkTermReadPath(String kmFrameworkTermReadPath) {
+		this.kmFrameworkTermReadPath = kmFrameworkTermReadPath;
+	}
+
+	public String getKmFrameworkTermCreatePath() {
+		return kmFrameworkTermCreatePath;
+	}
+
+	public void setKmFrameworkTermCreatePath(String kmFrameworkTermCreatePath) {
+		this.kmFrameworkTermCreatePath = kmFrameworkTermCreatePath;
+	}
+
+	public String getSectorFrameworkName() {
+		return sectorFrameworkName;
+	}
+
+	public void setSectorFrameworkName(String sectorFrameworkName) {
+		this.sectorFrameworkName = sectorFrameworkName;
 	}
 }

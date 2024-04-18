@@ -162,8 +162,7 @@ public class UserUtilityServiceImpl implements UserUtilityService {
 
 		try {
 			String url = props.getSbUrl() + props.getUserSearchEndPoint();
-			Map<String, Object> response = outboundRequestHandlerService.fetchResultUsingPost(
-					url, requestObj, headerValues);
+			Map<String, Object> response = outboundRequestHandlerService.fetchResultUsingPost(url, requestObj, headerValues);
 			SearchUserApiResp searchUserResult = objectMapper.convertValue(response, SearchUserApiResp.class);
 			if (searchUserResult != null && Constants.OK.equalsIgnoreCase(searchUserResult.getResponseCode())
 					&& searchUserResult.getResult().getResponse().getCount() > 0) {

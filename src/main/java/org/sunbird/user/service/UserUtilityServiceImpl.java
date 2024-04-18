@@ -146,8 +146,6 @@ public class UserUtilityServiceImpl implements UserUtilityService {
 	@Override
 	public Map<String, Object> getUsersDataFromUserIds(List<String> userIds, List<String> fields, String authToken) {
 		Map<String, Object> result = new HashMap<>();
-		// headers
-		HttpHeaders headers = new HttpHeaders();
 		// request body
 		SunbirdApiRequest requestObj = new SunbirdApiRequest();
 		Map<String, Object> reqMap = new HashMap<>();
@@ -161,8 +159,9 @@ public class UserUtilityServiceImpl implements UserUtilityService {
 
 		try {
 			String url = props.getSbUrl() + props.getUserSearchEndPoint();
-			HttpEntity<?> requestEnty = new HttpEntity<>(requestObj, headers);
-			SearchUserApiResp searchUserResult = restTemplate.postForObject(url, requestEnty, SearchUserApiResp.class);
+			Map<String, Object> response = outboundRequestHandlerService.fetchResultUsingPost(
+					url, requestObj, null);
+			SearchUserApiResp searchUserResult = objectMapper.convertValue(response, SearchUserApiResp.class);
 			if (searchUserResult != null && Constants.OK.equalsIgnoreCase(searchUserResult.getResponseCode())
 					&& searchUserResult.getResult().getResponse().getCount() > 0) {
 				for (SearchUserApiContent searchUserApiContent : searchUserResult.getResult().getResponse()

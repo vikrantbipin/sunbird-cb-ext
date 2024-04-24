@@ -291,12 +291,16 @@ public class CatalogServiceImpl {
 				if (subSector.containsKey(Constants.IDENTIFIER)) {
 					continue;
 				} else {
-					for (Map<String, Object> existingSubSector : existingChildren) {
-						if (name.equalsIgnoreCase((String) existingSubSector.get(Constants.NAME))) {
-							errMsg = "Failed to create SubSector. Name '" + name + "' already exists in Sector.";
-							break;
-						} else {
-							requiredSubSector.add(name);
+					if (CollectionUtils.isEmpty(existingChildren)) {
+						requiredSubSector.add(name);
+					} else {
+						for (Map<String, Object> existingSubSector : existingChildren) {
+							if (name.equalsIgnoreCase((String) existingSubSector.get(Constants.NAME))) {
+								errMsg = "Failed to create SubSector. Name '" + name + "' already exists in Sector.";
+								break;
+							} else {
+								requiredSubSector.add(name);
+							}
 						}
 					}
 				}

@@ -1025,9 +1025,32 @@ public class Constants {
 	public static final String PARENTS = "parents";
 	public static final String SUB_SECTORS = "subsectors";
 	public static final String COURSE_LINK = "courseLink";
+	public static final String API_CALENDAR_EVENT_BULK_UPLOAD = "api.calendar.event.bulk.upload";
+	public static final String TABLE_CALENDAR_EVENT_BULK_UPLOAD = "calendar_event_bulk_upload";
+	public static final String EVENT = "event";
+	public static final String REGISTRATION_LINK = "registrationLink";
+	public static final String EVENT_TYPE = "eventType";
+	public static final String ADDRESS = "address";
+	public static final String LOCATION = "location";
+	public static final String SOURCE_NAME = "sourceName";
+	public static final String CALENDAR = "Calendar";
+	public static final String RESOURCE_TYPE = "resourceType";
+	public static final String REGISTRATION_END_DATE = "registrationEndDate";
+	public static final String EVENT_KEY = "Event";
+	public static final String SLASH = "/";
+	public static final String API_MICRO_SITE_INSIGHTS ="api.micro-site.insights";
+  	public static final String TOP_COMMENTS_ORG_REDIS_KEY = "cbp_top_10_users_reviews_by_org";
+	public static final String PROFILE_IMAGE_URL = "profileImageUrl";
+	public static final String API_TOD_COMMENT_FOR_USER = "api.rating.top.v1.comment";
+	public static final String CONTENT_INFO = "contentInfo";
+	public static final String COURSE_ID_KEY = "courseID";
+	public static final String USER_ID_KEY = "userID";
 	public static final String PAGE_ID = "pageId";
 	public static final String USERS_LIST = "userList";
 	public static final String TOTAL_COUNT = "totalCount";
+	public static final String MICROSITE_TOP_FEATURE_CONTENT_API = "api.microsite.topfeatured.content";
+	public static final String ICON = "icon";
+
 	private Constants() {
 		throw new IllegalStateException("Utility class");
 	}

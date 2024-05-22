@@ -1025,6 +1025,17 @@ public class Constants {
 	public static final String PARENTS = "parents";
 	public static final String SUB_SECTORS = "subsectors";
 	public static final String COURSE_LINK = "courseLink";
+	public static final String NEGATIVE_MARKING_PERCENTAGE = "negativeMarkingPercentage";
+	public static final String ASSESSMENT_TYPE = "assessmentType";
+	public static final String TOTAL_MARKS = "totalMarks";
+	public static final String QUESTION_SECTION_SCHEME = "questionSectionScheme";
+	public static final String OPTION_WEIGHTAGE = "optionalWeightage";
+	public static final String QUESTION_WEIGHTAGE = "questionWeightage";
+	public static final String QUESTION_LEVEL = "questionLevel";
+	public static final String TOTAL_SECTION_MARKS = "totalSectionMarks";
+	public static final String SECTION_RESULT = "sectionResult";
+	public static final String SECTION_MARKS= "sectionMarks";
+	public static final String FAIL = "fail";
 	public static final String API_CALENDAR_EVENT_BULK_UPLOAD = "api.calendar.event.bulk.upload";
 	public static final String TABLE_CALENDAR_EVENT_BULK_UPLOAD = "calendar_event_bulk_upload";
 	public static final String EVENT = "event";
@@ -1053,6 +1064,7 @@ public class Constants {
 	public static final String DOMICILE_MEDIUM = "domicileMedium";
 	public static final String PINCODE = "pinCode";
 	public static final String EMPLOYEE_CODE = "employeeCode";
+	public static final String OPTION_WEIGHT = "optionWeight";
 	public static final String PROFILE_STATUS = "profileStatus";
 	public static final String NOT_VERIFIED = "NOT-VERIFIED";
 

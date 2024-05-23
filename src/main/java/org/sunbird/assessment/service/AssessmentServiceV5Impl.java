@@ -81,9 +81,9 @@ public class AssessmentServiceV5Impl implements AssessmentServiceV5 {
                 retakeAttemptsAllowed = (int) assessmentAllDetail.get(Constants.MAX_ASSESSMENT_RETAKE_ATTEMPTS);
             }
             
-            if (serverProperties.isAssessmentRetakeCountVerificationEnabled()) {
+           // if (serverProperties.isAssessmentRetakeCountVerificationEnabled()) {
                 retakeAttemptsConsumed = calculateAssessmentRetakeCount(userId, assessmentIdentifier);
-            }
+            //}
         } catch (Exception e) {
             errMsg = String.format("Error while calculating retake assessment. Exception: %s", e.getMessage());
             logger.error(errMsg, e);
@@ -136,6 +136,7 @@ public class AssessmentServiceV5Impl implements AssessmentServiceV5 {
             List<Map<String, Object>> existingDataList = assessUtilServ.readUserSubmittedAssessmentRecords(
                     userId, assessmentIdentifier);
             Timestamp assessmentStartTime = new Timestamp(new Date().getTime());
+
             if (existingDataList.isEmpty()) {
                 logger.info("Assessment read first time for user.");
                 // Add Null check for expectedDuration.throw bad questionSet Assessment Exam
@@ -180,6 +181,15 @@ public class AssessmentServiceV5Impl implements AssessmentServiceV5 {
                         || assessmentStartTime.compareTo(existingAssessmentEndTime) > 0) {
                     logger.info(
                             "Incase the assessment is submitted before the end time, or the endtime has exceeded, read assessment freshly ");
+                    if (assessmentAllDetail.get(Constants.MAX_ASSESSMENT_RETAKE_ATTEMPTS) != null) {
+                        int retakeAttemptsAllowed = (int) assessmentAllDetail.get(Constants.MAX_ASSESSMENT_RETAKE_ATTEMPTS);
+                        int retakeAttemptsConsumed = calculateAssessmentRetakeCount(userId, assessmentIdentifier);
+                        if(retakeAttemptsConsumed >= retakeAttemptsAllowed) {
+                            errMsg = Constants.ASSESSMENT_RETRY_ATTEMPTS_CROSSED;
+                            updateErrorDetails(response, errMsg, HttpStatus.INTERNAL_SERVER_ERROR);
+                            return response;
+                        }
+                    }
                     Map<String, Object> assessmentData = readAssessmentLevelData(assessmentAllDetail);
                     int expectedDuration = (Integer) assessmentAllDetail.get(Constants.EXPECTED_DURATION);
                     assessmentStartTime = new Timestamp(new Date().getTime());
@@ -188,7 +198,6 @@ public class AssessmentServiceV5Impl implements AssessmentServiceV5 {
                     assessmentData.put(Constants.START_TIME, assessmentStartTime.getTime());
                     assessmentData.put(Constants.END_TIME, assessmentEndTime.getTime());
                     response.getResult().put(Constants.QUESTION_SET, assessmentData);
-
                     Boolean isAssessmentUpdatedToDB = assessmentRepository.addUserAssesmentDataToDB(userId,
                             assessmentIdentifier, assessmentStartTime, assessmentEndTime,
                             assessmentData, Constants.NOT_SUBMITTED);

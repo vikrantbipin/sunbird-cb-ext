@@ -172,7 +172,7 @@ public class OperationalReportServiceImpl implements OperationalReportService {
             storageService = StorageServiceFactory.getStorageService(new StorageConfig(
                     serverProperties.getCloudStorageTypeName(), serverProperties.getCloudStorageKey(),
                     serverProperties.getCloudStorageSecret(),
-                    Option.apply(serverProperties.getCloudStorageCephs3Endpoint())));
+                    Option.apply(serverProperties.getCloudStorageEndpoint()), Option.empty()));
         }
     }
 

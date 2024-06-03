@@ -65,6 +65,7 @@ public class StorageServiceImpl implements StorageService {
 			storageService = StorageServiceFactory.getStorageService(new StorageConfig(
 					serverProperties.getCloudStorageTypeName(), serverProperties.getCloudStorageKey(),
 					serverProperties.getCloudStorageSecret(), Option.apply(serverProperties.getCloudStorageEndpoint()), Option.empty()));
+			logger.info("cloudstoragesecrettemplogging:\n", serverProperties.getCloudStorageSecret());
 		}
 	}
 
@@ -257,6 +258,7 @@ public class StorageServiceImpl implements StorageService {
 				}
 			} catch (Exception e) {
 				logger.error("Failed to read the downloaded file for url: " + objectKey);
+				logger.error("Exception while trying to read from blob storage", e);
 				LocalDateTime yesterday = now.minusDays(1);
 				String yesterdayFormattedDate = yesterday.format(dateFormat);
 				if (serverProperties.getReportPropertyFileAllMdo().contains(fileName)) {

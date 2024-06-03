@@ -65,7 +65,7 @@ public class StorageServiceImpl implements StorageService {
 			storageService = StorageServiceFactory.getStorageService(new StorageConfig(
 					serverProperties.getCloudStorageTypeName(), serverProperties.getCloudStorageKey(),
 					serverProperties.getCloudStorageSecret(), Option.apply(serverProperties.getCloudStorageEndpoint()), Option.empty()));
-			logger.info("cloudstoragesecrettemplogging:\n", serverProperties.getCloudStorageSecret());
+			logger.info("cloudstoragesecrettemplogging:" +  serverProperties.getCloudStorageSecret());
 		}
 	}
 

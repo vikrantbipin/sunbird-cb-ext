@@ -204,7 +204,7 @@ public class ProjectUtil {
 	}
 
 	public static Boolean validateRegexPatternWithNoSpecialCharacter(String regex) {
-		return regex.matches("^[a-zA-Z0-9 -()]*$");
+		return regex.matches("^[a-zA-Z0-9 \\-()]*$");
 	}
 
 	public static Boolean validatePinCode(String regex) {

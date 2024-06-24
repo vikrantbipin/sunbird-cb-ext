@@ -438,7 +438,7 @@ public class Constants {
 	public static final String APPROVED = "approved";
 	public static final String DENIED = "denied";
 
-	public static final String EMAIL_EXIST_ERROR = "Email id already registered";
+	public static final String EMAIL_EXIST_ERROR = "Email id already registered with another User profile";
 	public static final String EMAIL_VERIFIED = "emailVerified";
 	public static final String USER_NAME = "userName";
 	public static final String USER_FULL_NAME = "fullName";
@@ -654,7 +654,7 @@ public class Constants {
 	public static final String CHECKS = "checks";
 	public static final String CASSANDRA_DB = "cassandra db";
 	public static final String REDIS_CACHE = "redis cache";
-	public static final String PHONE_NUMBER_EXIST_ERROR = "Phone number is already registered.";
+	public static final String PHONE_NUMBER_EXIST_ERROR = "Phone number is already registered with another User profile.";
 	public static final String MOBILE_NUMBER_EXIST_ERROR = "Mobile number is already registered.";
 	public static final String PHONE_VERIFIED = "phoneVerified";
 	public static final String QUERY = "query";
@@ -1048,6 +1048,9 @@ public class Constants {
 	public static final String PAGE_ID = "pageId";
 	public static final String USERS_LIST = "userList";
 	public static final String TOTAL_COUNT = "totalCount";
+	public static final String TOO_MANY_REQUESTS = "TOO_MANY_REQUESTS";
+	public static final String SERVER_ERROR = "serverError";
+	public static final String RESOURCE_NOT_FOUND = "RESOURCE_NOT_FOUND";
 	public static final String MICROSITE_TOP_CONTENT_API = "api.microsite.top.content";
 	public static final String ICON = "icon";
 	public static final String DOMICILE_MEDIUM = "domicileMedium";
@@ -1057,6 +1060,10 @@ public class Constants {
 	public static final String NOT_VERIFIED = "NOT-VERIFIED";
 	public static final String PROFILE_STATUS_UPDATED_ON = "profileStatusUpdatedOn";
 	public static final String PROFILE_STATUS_UPDATED_MSG_VIEWED = "isProfileUpdatedMsgViewed";
+	public static final String PROFILE_GROUP_STATUS = "profileGroupStatus";
+	public static final String PROFILE_DESIGNATION_STATUS = "profileDesignationStatus";
+	public static final String NOT_MY_USER = "NOT-MY-USER";
+	public static final String SPACE = " ";
 
 	private Constants() {
 		throw new IllegalStateException("Utility class");

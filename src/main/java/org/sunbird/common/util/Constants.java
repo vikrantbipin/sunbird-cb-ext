@@ -1078,6 +1078,8 @@ public class Constants {
 	public static final String PROFILE_DESIGNATION_STATUS = "profileDesignationStatus";
 	public static final String NOT_MY_USER = "NOT-MY-USER";
 	public static final String SPACE = " ";
+	public static final String API_APPROVED_DOMAINS = "api.approved.domains";
+	public static final String DOMAINS = "domains";
 	public static final String REQUEST_TYPE = "requestType";
 	public static final String INSIGHT_FIELD_KEY = ".insights.fields";
 	public static final String INSIGHT_REDIS_KEY_MAPPING = ".insights.redis.key.mapping";

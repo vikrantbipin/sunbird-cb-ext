@@ -1099,6 +1099,8 @@ public class Constants {
 	public static final String SEARCH_COMPETENCY_SUB_THEMES = "competencySubTheme";
 	public static final String MCQ_MCA_W = "mcq-mca-w";
 	public static final String MCQ_SCA_TF = "mcq-sca-tf";
+	public static final String TOP_10_LEARNERS ="top10Learners";
+	public static final String TABLE_TOP_10_LEARNER ="mdo_top_learners";
 	public static final String CSV_FILE = ".csv";
 	public static final String XLSX_FILE = ".xlsx";
 

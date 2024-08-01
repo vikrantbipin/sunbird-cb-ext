@@ -601,6 +601,7 @@ public class Constants {
 	public static final String USER_ID_DOESNT_EXIST = "User Id doesn't exist! Please supply a valid auth token";
 	public static final String ASSESSMENT_DATA_START_TIME_NOT_UPDATED = "Assessment Data & Start Time not updated in the DB.";
 	public static final String FAILED_TO_GET_QUESTION_DETAILS = "Failed to get Question List data from the Question List Api.";
+	public static final String ASSESSMENT_RETRY_ATTEMPTS_CROSSED = "Maximum retry attempts for assessment reached.";
 
 	public static final String ASSESSMENT_HIERARCHY_READ_FAILED = "Assessment hierarchy read failed, failed to process request";
 	public static final String ASSESSMENT_ID_KEY_IS_NOT_PRESENT_IS_EMPTY = "Assessment Id Key is not present/is empty";
@@ -692,6 +693,7 @@ public class Constants {
 	public static final String STATUS_IS_IN_PROGRESS = "isInProgress";
 	public static final String ASSESSMENT_SUBMIT_IN_PROGRESS = "SUBMIT_IN_PROGRESS";
 	public static final String ASSESSMENT_READ_RESPONSE_KEY = "assessmentReadResponse";
+	public static final String ASSESSMENT_SAVE_READ_RESPONSE_KEY = "savepointsubmitreq";
 	public static final String START_TIME_KEY = "startTime";
 	public static final String VERIFIED_PROFILE_FIELDS_KEY = "verifiedProfileFields";
 	public static final String PROFILE_APPROVAL_FIELDS_KEY = "profileApprovalFields";
@@ -1025,6 +1027,17 @@ public class Constants {
 	public static final String PARENTS = "parents";
 	public static final String SUB_SECTORS = "subsectors";
 	public static final String COURSE_LINK = "courseLink";
+	public static final String NEGATIVE_MARKING_PERCENTAGE = "negativeMarkingPercentage";
+	public static final String ASSESSMENT_TYPE = "assessmentType";
+	public static final String TOTAL_MARKS = "totalMarks";
+	public static final String QUESTION_SECTION_SCHEME = "questionSectionScheme";
+	public static final String OPTION_WEIGHTAGE = "optionalWeightage";
+	public static final String QUESTION_WEIGHTAGE = "questionWeightage";
+	public static final String QUESTION_LEVEL = "questionLevel";
+	public static final String TOTAL_SECTION_MARKS = "totalSectionMarks";
+	public static final String SECTION_RESULT = "sectionResult";
+	public static final String SECTION_MARKS= "sectionMarks";
+	public static final String FAIL = "fail";
 	public static final String API_CALENDAR_EVENT_BULK_UPLOAD = "api.calendar.event.bulk.upload";
 	public static final String TABLE_CALENDAR_EVENT_BULK_UPLOAD = "calendar_event_bulk_upload";
 	public static final String EVENT = "event";
@@ -1056,6 +1069,7 @@ public class Constants {
 	public static final String DOMICILE_MEDIUM = "domicileMedium";
 	public static final String PINCODE = "pinCode";
 	public static final String EMPLOYEE_CODE = "employeeCode";
+	public static final String OPTION_WEIGHT = "optionWeight";
 	public static final String PROFILE_STATUS = "profileStatus";
 	public static final String NOT_VERIFIED = "NOT-VERIFIED";
 	public static final String PROFILE_STATUS_UPDATED_ON = "profileStatusUpdatedOn";
@@ -1064,6 +1078,29 @@ public class Constants {
 	public static final String PROFILE_DESIGNATION_STATUS = "profileDesignationStatus";
 	public static final String NOT_MY_USER = "NOT-MY-USER";
 	public static final String SPACE = " ";
+	public static final String API_APPROVED_DOMAINS = "api.approved.domains";
+	public static final String DOMAINS = "domains";
+	public static final String REQUEST_TYPE = "requestType";
+	public static final String INSIGHT_FIELD_KEY = ".insights.fields";
+	public static final String INSIGHT_REDIS_KEY_MAPPING = ".insights.redis.key.mapping";
+	public static final String INSIGHT_PROPERTY_FIELDS = ".insights.property.fields";
+	public static final String TIME_TAKEN_FOR_ASSESSMENT= "timeTakenForAssessment";
+	public static final String RETAKE_ATTEMPT_CONSUMED = "retakeAttemptsConsumed";
+	public static final String TOTAL_PERCENTAGE = "totalPercentage";
+	public static final String SECTION_LEVEL_DEFINITION = "sectionLevelDefinition";
+
+	public static final String ASSESSMENT_HIERARCHY_SAVE_NOT_AVBL = "Assessment hierarchy save point not available, failed to process request";
+	public static final String SEQUENCE_NO = "seqno";
+	public static final String API_EXPLORE_COURSE_UPDATE = "api.explore.course.update";
+	public static final String API_EXPLORE_COURSE_DELETE = "api.explore.course.delete";
+	public static final String COMPETENCIES_ORG_COURSES_REDIS_KEY = "dashboard_core_competencies_by_user_org";
+	public static final String ORG_COMPETENCY_SEARCH_API = "api.org.competency.search";
+	public static final String SEARCH_COMPETENCY_THEMES = "competencyTheme";
+	public static final String SEARCH_COMPETENCY_SUB_THEMES = "competencySubTheme";
+	public static final String MCQ_MCA_W = "mcq-mca-w";
+	public static final String MCQ_SCA_TF = "mcq-sca-tf";
+	public static final String CSV_FILE = ".csv";
+	public static final String XLSX_FILE = ".xlsx";
 
 	private Constants() {
 		throw new IllegalStateException("Utility class");

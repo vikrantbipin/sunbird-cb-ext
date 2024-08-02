@@ -595,6 +595,8 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                 }
             }
             List<Map<String, Object>> questions = (List<Map<String, Object>>) section.get(Constants.CHILDREN);
+            // Shuffle the list of questions
+            Collections.shuffle(questions);
             int maxQuestions = (int) section.getOrDefault(Constants.MAX_QUESTIONS, questions.size());
             List<String> childNodeList = questions.stream()
                     .map(question -> (String) question.get(Constants.IDENTIFIER))

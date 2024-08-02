@@ -92,6 +92,8 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
             
             if (serverProperties.isAssessmentRetakeCountVerificationEnabled()) {
                 retakeAttemptsConsumed = calculateAssessmentRetakeCount(userId, assessmentIdentifier);
+                if(retakeAttemptsConsumed > 0)
+                    retakeAttemptsConsumed = retakeAttemptsConsumed-1;
             }
         } catch (Exception e) {
             errMsg = String.format("Error while calculating retake assessment. Exception: %s", e.getMessage());

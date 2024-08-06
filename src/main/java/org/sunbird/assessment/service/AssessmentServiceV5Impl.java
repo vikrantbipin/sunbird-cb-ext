@@ -1,22 +1,10 @@
 package org.sunbird.assessment.service;
 
-import static java.util.stream.Collectors.toList;
-import static org.sunbird.common.util.Constants.API_USER_INSIGHTS;
-import static org.sunbird.common.util.Constants.RESPONSE;
-
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import com.beust.jcommander.internal.Lists;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
@@ -30,20 +18,23 @@ import org.springframework.util.ObjectUtils;
 import org.sunbird.assessment.repo.AssessmentRepository;
 import org.sunbird.common.model.SBApiResponse;
 import org.sunbird.common.service.OutboundRequestHandlerServiceImpl;
-import org.sunbird.common.util.*;
+import org.sunbird.common.util.AccessTokenValidator;
+import org.sunbird.common.util.CbExtServerProperties;
+import org.sunbird.common.util.Constants;
+import org.sunbird.common.util.ProjectUtil;
 import org.sunbird.core.producer.Producer;
 
-import com.beust.jcommander.internal.Lists;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.*;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @SuppressWarnings("unchecked")
-public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
+public class AssessmentServiceV5Impl implements AssessmentServiceV5 {
 
-    private final Logger logger = LoggerFactory.getLogger(AssessmentServiceV4Impl.class);
+    private final Logger logger = LoggerFactory.getLogger(AssessmentServiceV5Impl.class);
     @Autowired
     CbExtServerProperties serverProperties;
 
@@ -67,7 +58,7 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
 
     @Override
     public SBApiResponse retakeAssessment(String assessmentIdentifier, String token,Boolean editMode) {
-        logger.info("AssessmentServiceV4Impl::retakeAssessment... Started");
+        logger.info("AssessmentServicev5Impl::retakeAssessment... Started");
         SBApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_RETAKE_ASSESSMENT_GET);
         String errMsg = "";
         int retakeAttemptsAllowed = 0;
@@ -90,9 +81,10 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                 retakeAttemptsAllowed = (int) assessmentAllDetail.get(Constants.MAX_ASSESSMENT_RETAKE_ATTEMPTS);
             }
             
-            if (serverProperties.isAssessmentRetakeCountVerificationEnabled()) {
+           // if (serverProperties.isAssessmentRetakeCountVerificationEnabled()) {
                 retakeAttemptsConsumed = calculateAssessmentRetakeCount(userId, assessmentIdentifier);
-            }
+                retakeAttemptsConsumed=retakeAttemptsConsumed-1;
+            //}
         } catch (Exception e) {
             errMsg = String.format("Error while calculating retake assessment. Exception: %s", e.getMessage());
             logger.error(errMsg, e);
@@ -103,13 +95,13 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
             response.getResult().put(Constants.TOTAL_RETAKE_ATTEMPTS_ALLOWED, retakeAttemptsAllowed);
             response.getResult().put(Constants.RETAKE_ATTEMPTS_CONSUMED, retakeAttemptsConsumed);
         }
-        logger.info("AssessmentServiceV4Impl::retakeAssessment... Completed");
+        logger.info("AssessmentServicev5Impl::retakeAssessment... Completed");
         return response;
     }
 
     @Override
     public SBApiResponse readAssessment(String assessmentIdentifier, String token,boolean editMode) {
-        logger.info("AssessmentServiceV4Impl::readAssessment... Started");
+        logger.info("AssessmentServicev5Impl::readAssessment... Started");
         SBApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_READ_ASSESSMENT);
         String errMsg = "";
         try {
@@ -122,6 +114,7 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
 
             Map<String, Object> assessmentAllDetail = null ;
 
+            // Step-1 : Read assessment using assessment Id from the Assessment Service
             if(editMode) {
                 assessmentAllDetail = assessUtilServ.fetchHierarchyFromAssessServc(assessmentIdentifier,token);
             }
@@ -136,15 +129,18 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                 return response;
             }
 
+            //Step-2 : If Practice Assessment return without saving
             if (Constants.PRACTICE_QUESTION_SET
                     .equalsIgnoreCase((String) assessmentAllDetail.get(Constants.PRIMARY_CATEGORY))||editMode) {
                 response.getResult().put(Constants.QUESTION_SET, readAssessmentLevelData(assessmentAllDetail));
                 return response;
             }
 
+            // Step-3 : If read user submitted assessment
             List<Map<String, Object>> existingDataList = assessUtilServ.readUserSubmittedAssessmentRecords(
                     userId, assessmentIdentifier);
-            Timestamp assessmentStartTime = new Timestamp(new java.util.Date().getTime());
+            Timestamp assessmentStartTime = new Timestamp(new Date().getTime());
+
             if (existingDataList.isEmpty()) {
                 logger.info("Assessment read first time for user.");
                 // Add Null check for expectedDuration.throw bad questionSet Assessment Exam
@@ -168,7 +164,7 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                 }
             } else {
                 logger.info("Assessment read... user has details... ");
-                java.util.Date existingAssessmentEndTime = (java.util.Date) (existingDataList.get(0)
+                Date existingAssessmentEndTime = (Date) (existingDataList.get(0)
                         .get(Constants.END_TIME));
                 Timestamp existingAssessmentEndTimeTimestamp = new Timestamp(
                         existingAssessmentEndTime.getTime());
@@ -189,15 +185,23 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                         || assessmentStartTime.compareTo(existingAssessmentEndTime) > 0) {
                     logger.info(
                             "Incase the assessment is submitted before the end time, or the endtime has exceeded, read assessment freshly ");
+                    if (assessmentAllDetail.get(Constants.MAX_ASSESSMENT_RETAKE_ATTEMPTS) != null) {
+                        int retakeAttemptsAllowed = (int) assessmentAllDetail.get(Constants.MAX_ASSESSMENT_RETAKE_ATTEMPTS) +1;
+                        int retakeAttemptsConsumed = calculateAssessmentRetakeCount(userId, assessmentIdentifier);
+                        if(retakeAttemptsConsumed >= retakeAttemptsAllowed) {
+                            errMsg = Constants.ASSESSMENT_RETRY_ATTEMPTS_CROSSED;
+                            updateErrorDetails(response, errMsg, HttpStatus.INTERNAL_SERVER_ERROR);
+                            return response;
+                        }
+                    }
                     Map<String, Object> assessmentData = readAssessmentLevelData(assessmentAllDetail);
                     int expectedDuration = (Integer) assessmentAllDetail.get(Constants.EXPECTED_DURATION);
-                    assessmentStartTime = new Timestamp(new java.util.Date().getTime());
+                    assessmentStartTime = new Timestamp(new Date().getTime());
                     Timestamp assessmentEndTime = calculateAssessmentSubmitTime(expectedDuration,
                             assessmentStartTime, 0);
                     assessmentData.put(Constants.START_TIME, assessmentStartTime.getTime());
                     assessmentData.put(Constants.END_TIME, assessmentEndTime.getTime());
                     response.getResult().put(Constants.QUESTION_SET, assessmentData);
-
                     Boolean isAssessmentUpdatedToDB = assessmentRepository.addUserAssesmentDataToDB(userId,
                             assessmentIdentifier, assessmentStartTime, assessmentEndTime,
                             assessmentData, Constants.NOT_SUBMITTED);
@@ -250,14 +254,7 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
         return response;
     }
 
-    @Override
-    public SBApiResponse submitAssessment(Map<String, Object> data, String userAuthToken) {
-        SBApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_SUBMIT_ASSESSMENT);
-        updateErrorDetails(response, "Method not supported", HttpStatus.NOT_IMPLEMENTED);
-        return response;
-    }
-
-    public SBApiResponse readAssessmentResultV4(Map<String, Object> request, String userAuthToken) {
+    public SBApiResponse readAssessmentResultV5(Map<String, Object> request, String userAuthToken) {
         SBApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_READ_ASSESSMENT_RESULT);
         try {
             String userId = accessTokenValidator.fetchUserIdFromAccessToken(userAuthToken);
@@ -302,9 +299,11 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
     }
 
     public SBApiResponse submitAssessmentAsync(Map<String, Object> submitRequest, String userAuthToken,boolean editMode) {
-        logger.info("AssessmentServiceV4Impl::submitAssessmentAsync.. started");
+        logger.info("AssessmentServicev5Impl::submitAssessmentAsync.. started");
         SBApiResponse outgoingResponse = ProjectUtil.createDefaultResponse(Constants.API_SUBMIT_ASSESSMENT);
+        long assessmentCompletionTime= Calendar.getInstance().getTime().getTime();
         try {
+            // Step-1 fetch userid
             String userId = accessTokenValidator.fetchUserIdFromAccessToken(userAuthToken);
             if (ObjectUtils.isEmpty(userId)) {
                 updateErrorDetails(outgoingResponse, Constants.USER_ID_DOESNT_EXIST, HttpStatus.BAD_REQUEST);
@@ -316,17 +315,23 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
             List<Map<String, Object>> hierarchySectionList = new ArrayList<>();
             Map<String, Object> assessmentHierarchy = new HashMap<>();
             Map<String, Object> existingAssessmentData = new HashMap<>();
-
+            //Confirm whether the submitted request sections and questions match.
             errMsg = validateSubmitAssessmentRequest(submitRequest, userId, hierarchySectionList,
                     sectionListFromSubmitRequest, assessmentHierarchy, existingAssessmentData,userAuthToken,editMode);
-
             if (StringUtils.isNotBlank(errMsg)) {
                 updateErrorDetails(outgoingResponse, errMsg, HttpStatus.BAD_REQUEST);
                 return outgoingResponse;
             }
+            int maxAssessmentRetakeAttempts = (Integer) assessmentHierarchy.get(Constants.MAX_ASSESSMENT_RETAKE_ATTEMPTS);
+            int retakeAttemptsConsumed = calculateAssessmentRetakeCount(userId, assessmentIdFromRequest);
             String assessmentPrimaryCategory = (String) assessmentHierarchy.get(Constants.PRIMARY_CATEGORY);
-
-                String scoreCutOffType = ((String) assessmentHierarchy.get(Constants.SCORE_CUTOFF_TYPE)).toLowerCase();
+            String assessmentType=((String) assessmentHierarchy.get(Constants.ASSESSMENT_TYPE)).toLowerCase();
+            String scoreCutOffType ;
+            if(assessmentType.equalsIgnoreCase(Constants.QUESTION_WEIGHTAGE)){
+                scoreCutOffType= Constants.SECTION_LEVEL_SCORE_CUTOFF;
+            }else {
+                scoreCutOffType= Constants.ASSESSMENT_LEVEL_SCORE_CUTOFF;
+            }
                 List<Map<String, Object>> sectionLevelsResults = new ArrayList<>();
                 for (Map<String, Object> hierarchySection : hierarchySectionList) {
                     String hierarchySectionId = (String) hierarchySection.get(Constants.IDENTIFIER);
@@ -351,18 +356,18 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                     List<Object> questionsList = questionsListFromSubmitRequest.stream()
                             .flatMap(x -> desiredKeys.stream().filter(x::containsKey).map(x::get)).collect(toList());
                     List<String> questionsListFromAssessmentHierarchy = questionsList.stream()
-                            .map(object -> Objects.toString(object, null)).collect(Collectors.toList());
+                            .map(object -> Objects.toString(object, null)).collect(toList());
                     Map<String, Object> result = new HashMap<>();
+                    Map<String, Object> questionSetDetailsMap = getParamDetailsForQTypes(hierarchySection,assessmentHierarchy,hierarchySectionId);
                     switch (scoreCutOffType) {
                         case Constants.ASSESSMENT_LEVEL_SCORE_CUTOFF: {
                             result.putAll(createResponseMapWithProperStructure(hierarchySection,
-                                    assessUtilServ.validateQumlAssessment(questionsListFromAssessmentHierarchy,
+                                    assessUtilServ.validateQumlAssessmentV2(questionSetDetailsMap,questionsListFromAssessmentHierarchy,
                                             questionsListFromSubmitRequest,assessUtilServ.readQListfromCache(questionsListFromAssessmentHierarchy,assessmentIdFromRequest,editMode,userAuthToken))));
                             Map<String, Object> finalRes= calculateAssessmentFinalResults(result);
                             outgoingResponse.getResult().putAll(finalRes);
                             outgoingResponse.getResult().put(Constants.PRIMARY_CATEGORY, assessmentPrimaryCategory);
                             if (!Constants.PRACTICE_QUESTION_SET.equalsIgnoreCase(assessmentPrimaryCategory) && !editMode) {
-
                                 String questionSetFromAssessmentString = (String) existingAssessmentData
                                         .get(Constants.ASSESSMENT_READ_RESPONSE_KEY);
                                 Map<String,Object> questionSetFromAssessment = null;
@@ -374,12 +379,11 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                                 writeDataToDatabaseAndTriggerKafkaEvent(submitRequest, userId, questionSetFromAssessment, finalRes,
                                         (String) assessmentHierarchy.get(Constants.PRIMARY_CATEGORY));
                             }
-
                             return outgoingResponse;
                         }
                         case Constants.SECTION_LEVEL_SCORE_CUTOFF: {
                             result.putAll(createResponseMapWithProperStructure(hierarchySection,
-                                    assessUtilServ.validateQumlAssessment(questionsListFromAssessmentHierarchy,
+                                    assessUtilServ.validateQumlAssessmentV2(questionSetDetailsMap,questionsListFromAssessmentHierarchy,
                                             questionsListFromSubmitRequest,assessUtilServ.readQListfromCache(questionsListFromAssessmentHierarchy,assessmentIdFromRequest,editMode,userAuthToken))));
                             sectionLevelsResults.add(result);
                         }
@@ -389,7 +393,12 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                     }
                 }
                 if (Constants.SECTION_LEVEL_SCORE_CUTOFF.equalsIgnoreCase(scoreCutOffType)) {
-                    Map<String, Object> result = calculateSectionFinalResults(sectionLevelsResults);
+                    long assessmentStartTime = 0;
+                    if (existingAssessmentData.get(Constants.START_TIME)!=null) {
+                        Date assessmentStart = (Date) existingAssessmentData.get(Constants.START_TIME);
+                        assessmentStartTime = assessmentStart.getTime();
+                    }
+                    Map<String, Object> result = calculateSectionFinalResults(sectionLevelsResults,assessmentStartTime,assessmentCompletionTime,maxAssessmentRetakeAttempts,retakeAttemptsConsumed);
                     outgoingResponse.getResult().putAll(result);
                     outgoingResponse.getParams().setStatus(Constants.SUCCESS);
                     outgoingResponse.setResponseCode(HttpStatus.OK);
@@ -415,129 +424,6 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
             updateErrorDetails(outgoingResponse, errMsg, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return outgoingResponse;
-    }
-
-    public void handleAssessmentSubmitRequest(Map<String, Object> asyncRequest,boolean editMode,String token) {
-        String userId = (String) asyncRequest.get(Constants.USER_ID_CONSTANT);
-        Map<String, Object> submitRequest = (Map<String, Object>) asyncRequest.get(Constants.REQUEST);
-
-        String errMsg = "";
-        try {
-            String assessmentIdFromRequest = (String) submitRequest.get(Constants.IDENTIFIER);
-            Map<String, Object> assessmentHierarchy = assessUtilServ
-                    .readAssessmentHierarchyFromCache(assessmentIdFromRequest,editMode,token);
-            if (MapUtils.isEmpty(assessmentHierarchy)) {
-                logger.error(Constants.READ_ASSESSMENT_FAILED, new Exception(Constants.READ_ASSESSMENT_FAILED));
-                return;
-            }
-
-            List<Map<String, Object>> hierarchySectionList = (List<Map<String, Object>>) assessmentHierarchy
-                    .get(Constants.CHILDREN);
-            List<Map<String, Object>> sectionListFromSubmitRequest = (List<Map<String, Object>>) submitRequest
-                    .get(Constants.CHILDREN);
-
-            List<Map<String, Object>> existingDataList = assessUtilServ.readUserSubmittedAssessmentRecords(
-                    userId, assessmentIdFromRequest);
-            if (existingDataList.isEmpty()) {
-                errMsg = Constants.USER_ASSESSMENT_DATA_NOT_PRESENT;
-                logger.error(errMsg, new Exception(errMsg));
-                return;
-            }
-
-            if (Constants.SUBMITTED.equalsIgnoreCase((String) existingDataList.get(0).get(Constants.STATUS))) {
-                errMsg = Constants.ASSESSMENT_ALREADY_SUBMITTED;
-                logger.error(errMsg, new Exception(errMsg));
-                return;
-            }
-            Map<String, Object> existingAssessmentData = existingDataList.get(0);
-
-            List<String> questionsListFromAssessmentHierarchy = new ArrayList<>();
-
-            String scoreCutOffType = ((String) assessmentHierarchy.get(Constants.SCORE_CUTOFF_TYPE)).toLowerCase();
-            List<Map<String, Object>> sectionLevelsResults = new ArrayList<>();
-            Map<String, Object> questionSetFromAssessment = new HashMap<>();
-            for (Map<String, Object> hierarchySection : hierarchySectionList) {
-                String hierarchySectionId = (String) hierarchySection.get(Constants.IDENTIFIER);
-                String userSectionId = "";
-                Map<String, Object> userSectionData = new HashMap<>();
-                for (Map<String, Object> sectionFromSubmitRequest : sectionListFromSubmitRequest) {
-                    userSectionId = (String) sectionFromSubmitRequest.get(Constants.IDENTIFIER);
-                    if (userSectionId.equalsIgnoreCase(hierarchySectionId)) {
-                        userSectionData = sectionFromSubmitRequest;
-                        break;
-                    }
-                }
-                if (!((String) (assessmentHierarchy.get(Constants.PRIMARY_CATEGORY)))
-                        .equalsIgnoreCase(Constants.PRACTICE_QUESTION_SET)) {
-
-                    String questionSetFromAssessmentString = (String) existingAssessmentData
-                            .get(Constants.ASSESSMENT_READ_RESPONSE_KEY);
-                    if (StringUtils.isNotBlank(questionSetFromAssessmentString)) {
-                        questionSetFromAssessment = mapper.readValue(questionSetFromAssessmentString,
-                                new TypeReference<Map<String, Object>>() {
-                                });
-                    }
-
-                    if (questionSetFromAssessment != null
-                            && questionSetFromAssessment.get(Constants.CHILDREN) != null) {
-                        List<Map<String, Object>> sections = (List<Map<String, Object>>) questionSetFromAssessment
-                                .get(Constants.CHILDREN);
-                        for (Map<String, Object> section : sections) {
-                            String sectionId = (String) section.get(Constants.IDENTIFIER);
-                            if (userSectionId.equalsIgnoreCase(sectionId)) {
-                                questionsListFromAssessmentHierarchy = (List<String>) section
-                                        .get(Constants.CHILD_NODES);
-                                break;
-                            }
-                        }
-                    } else {
-                        errMsg = "Question Set From The Database returns Null. Failed to calculate assessment score.";
-                        logger.error(errMsg, new Exception(errMsg));
-                        break;
-                    }
-
-                    hierarchySection.put(Constants.SCORE_CUTOFF_TYPE, scoreCutOffType);
-                    List<Map<String, Object>> questionsListFromSubmitRequest = new ArrayList<>();
-                    if (userSectionData.containsKey(Constants.CHILDREN)
-                            && !ObjectUtils.isEmpty(userSectionData.get(Constants.CHILDREN))) {
-                        questionsListFromSubmitRequest = (List<Map<String, Object>>) userSectionData
-                                .get(Constants.CHILDREN);
-                    }
-                    Map<String, Object> result = new HashMap<>();
-                    switch (scoreCutOffType) {
-                        case Constants.ASSESSMENT_LEVEL_SCORE_CUTOFF: {
-                            result.putAll(createResponseMapWithProperStructure(hierarchySection,
-                                    assessUtilServ.validateQumlAssessment(questionsListFromAssessmentHierarchy,
-                                            questionsListFromSubmitRequest,assessUtilServ.readQListfromCache(questionsListFromAssessmentHierarchy,assessmentIdFromRequest,editMode,token))));
-                            Map<String, Object> finalResult = calculateAssessmentFinalResults(result);
-                            finalResult.put(Constants.STATUS_IS_IN_PROGRESS, false);
-                            writeDataToDatabaseAndTriggerKafkaEvent(submitRequest, userId, questionSetFromAssessment,
-                                    finalResult, (String) assessmentHierarchy.get(Constants.PRIMARY_CATEGORY));
-                        }
-                        case Constants.SECTION_LEVEL_SCORE_CUTOFF: {
-                            result.putAll(createResponseMapWithProperStructure(hierarchySection,
-                                    assessUtilServ.validateQumlAssessment(questionsListFromAssessmentHierarchy,
-                                            questionsListFromSubmitRequest,assessUtilServ.readQListfromCache(questionsListFromAssessmentHierarchy,assessmentIdFromRequest,editMode,token))));
-                            sectionLevelsResults.add(result);
-                        }
-                            break;
-                        default:
-                            break;
-                    }
-
-                }
-            }
-            if (errMsg.isEmpty() && !ObjectUtils.isEmpty(scoreCutOffType)
-                    && scoreCutOffType.equalsIgnoreCase(Constants.SECTION_LEVEL_SCORE_CUTOFF)) {
-                Map<String, Object> result = calculateSectionFinalResults(sectionLevelsResults);
-                result.put(Constants.STATUS_IS_IN_PROGRESS, false);
-                writeDataToDatabaseAndTriggerKafkaEvent(submitRequest, userId, questionSetFromAssessment, result,
-                        (String) assessmentHierarchy.get(Constants.PRIMARY_CATEGORY));
-            }
-        } catch (Exception e) {
-            errMsg = String.format("Failed to process assessent submit request. Exception: ", e.getMessage());
-            logger.error(errMsg, e);
-        }
     }
 
     private void updateErrorDetails(SBApiResponse response, String errMsg, HttpStatus responseCode) {
@@ -599,7 +485,7 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
             List<String> childNodeList = questions.stream()
                     .map(question -> (String) question.get(Constants.IDENTIFIER))
                     .limit(maxQuestions)
-                    .collect(Collectors.toList());
+                    .collect(toList());
             Collections.shuffle(childNodeList);
             newSection.put(Constants.CHILD_NODES, childNodeList);
             sectionResponse.add(newSection);
@@ -794,7 +680,7 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                 }
                 List<Object> userQuestionIdsFromSubmitRequest = questionsListFromSubmitRequest.stream()
                         .flatMap(x -> desiredKeys.stream().filter(x::containsKey).map(x::get))
-                        .collect(Collectors.toList());
+                        .collect(toList());
                 if (!new HashSet<>(questionIdsFromAssessmentHierarchy).containsAll(userQuestionIdsFromSubmitRequest)) {
                     return Constants.ASSESSMENT_SUBMIT_INVALID_QUESTION;
                 }
@@ -812,15 +698,20 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
         sectionLevelResult.put(Constants.OBJECT_TYPE, hierarchySection.get(Constants.OBJECT_TYPE));
         sectionLevelResult.put(Constants.PRIMARY_CATEGORY, hierarchySection.get(Constants.PRIMARY_CATEGORY));
         sectionLevelResult.put(Constants.PASS_PERCENTAGE, hierarchySection.get(Constants.MINIMUM_PASS_PERCENTAGE));
+        sectionLevelResult.put(Constants.NAME, hierarchySection.get(Constants.NAME));
         Double result;
         if (!ObjectUtils.isEmpty(resultMap)) {
             result = (Double) resultMap.get(Constants.RESULT);
             sectionLevelResult.put(Constants.RESULT, result);
-            sectionLevelResult.put(Constants.TOTAL, resultMap.get(Constants.TOTAL));
             sectionLevelResult.put(Constants.BLANK, resultMap.get(Constants.BLANK));
             sectionLevelResult.put(Constants.CORRECT, resultMap.get(Constants.CORRECT));
             sectionLevelResult.put(Constants.INCORRECT, resultMap.get(Constants.INCORRECT));
             sectionLevelResult.put(Constants.CHILDREN,resultMap.get(Constants.CHILDREN));
+            sectionLevelResult.put(Constants.SECTION_RESULT,resultMap.get(Constants.SECTION_RESULT));
+            sectionLevelResult.put(Constants.TOTAL_MARKS,resultMap.get(Constants.TOTAL_MARKS));
+            sectionLevelResult.put(Constants.SECTION_MARKS,resultMap.get(Constants.SECTION_MARKS));
+
+
         } else {
             result = 0.0;
             sectionLevelResult.put(Constants.RESULT, result);
@@ -847,6 +738,7 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
             res.put(Constants.CORRECT, assessmentLevelResult.get(Constants.CORRECT));
             res.put(Constants.PASS_PERCENTAGE, assessmentLevelResult.get(Constants.PASS_PERCENTAGE));
             res.put(Constants.INCORRECT, assessmentLevelResult.get(Constants.INCORRECT));
+            res.put(Constants.NAME, assessmentLevelResult.get(Constants.NAME));
             Integer minimumPassPercentage = (Integer) assessmentLevelResult.get(Constants.PASS_PERCENTAGE);
             res.put(Constants.PASS, result >= minimumPassPercentage);
         } catch (Exception e) {
@@ -898,13 +790,15 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
         }
     }
 
-    private Map<String, Object> calculateSectionFinalResults(List<Map<String, Object>> sectionLevelResults) {
+    private Map<String, Object> calculateSectionFinalResults(List<Map<String, Object>> sectionLevelResults, long assessmentStartTime, long assessmentCompletionTime, int maxAssessmentRetakeAttempts, int retakeAttemptsConsumed) {
         Map<String, Object> res = new HashMap<>();
         Double result;
         Integer correct = 0;
         Integer blank = 0;
         Integer inCorrect = 0;
         Integer total = 0;
+        Double totalSectionMarks = 0.0;
+        Integer totalMarks = 0;
         int pass = 0;
         Double totalResult = 0.0;
         try {
@@ -912,7 +806,6 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                 res.put(Constants.CHILDREN, sectionLevelResults);
                 result = (Double) sectionChildren.get(Constants.RESULT);
                 totalResult += result;
-                total += (Integer) sectionChildren.get(Constants.TOTAL);
                 blank += (Integer) sectionChildren.get(Constants.BLANK);
                 correct += (Integer) sectionChildren.get(Constants.CORRECT);
                 inCorrect += (Integer) sectionChildren.get(Constants.INCORRECT);
@@ -920,13 +813,25 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
                 if (result >= minimumPassPercentage) {
                     pass++;
                 }
+                if(sectionChildren.get(Constants.SECTION_MARKS)!=null){
+                    totalSectionMarks += (Double) sectionChildren.get(Constants.SECTION_MARKS);
+                }
+                if(sectionChildren.get(Constants.TOTAL_MARKS)!=null){
+                    totalMarks += (Integer) sectionChildren.get(Constants.TOTAL_MARKS);
+                }
             }
-            res.put(Constants.OVERALL_RESULT, totalResult / sectionLevelResults.size());
-            res.put(Constants.TOTAL, total);
+            res.put(Constants.OVERALL_RESULT, ((double)correct / (double)(correct+inCorrect)) * 100);
             res.put(Constants.BLANK, blank);
             res.put(Constants.CORRECT, correct);
             res.put(Constants.INCORRECT, inCorrect);
             res.put(Constants.PASS, (pass == sectionLevelResults.size()));
+            res.put(Constants.TIME_TAKEN_FOR_ASSESSMENT,assessmentCompletionTime-assessmentStartTime);
+            res.put(Constants.MAX_ASSESSMENT_RETAKE_ATTEMPTS,maxAssessmentRetakeAttempts);
+            res.put(Constants.RETAKE_ATTEMPT_CONSUMED,retakeAttemptsConsumed);
+            double totalPercentage = (totalSectionMarks / (double)totalMarks) * 100;
+            res.put(Constants.TOTAL_PERCENTAGE, totalPercentage);
+            res.put(Constants.TOTAL_SECTION_MARKS, totalSectionMarks);
+            res.put(Constants.TOTAL_MARKS, totalMarks);
         } catch (Exception e) {
             logger.error("Failed to calculate assessment score. Exception: ", e);
         }
@@ -967,20 +872,223 @@ public class AssessmentServiceV4Impl implements AssessmentServiceV4 {
         return errMsg;
     }
 
-    public SBApiResponse readWheebox(String userAuthToken) {
-        SBApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_READ_ASSESSMENT_RESULT);
-           try {
-            String userId = accessTokenValidator.fetchUserIdFromAccessToken(userAuthToken);
+
+    /**
+     * Generates a map containing marks for each question.
+     * The input is a map where each key is a section name, and the value is another map.
+     * This inner map has proficiency keys, and each proficiency key maps to a map containing various attributes including "marksForQuestion".
+     * The output map's keys are of the format "sectionKey|proficiencyKey" and values are the corresponding marks for that question.
+     *
+     * @param qSectionSchemeMap a map representing sections and their respective proficiency maps
+     * @return a map where each key is a combination of section and proficiency, and each value is the marks for that question
+     */
+    public Map<String, Integer> generateMarkMap(Map<String, Map<String, Object>> qSectionSchemeMap) {
+        Map<String, Integer> markMap = new HashMap<>();
+        logger.info("Starting to generate mark map from qSectionSchemeMap");
+        qSectionSchemeMap.keySet().forEach(sectionKey -> {
+            Map<String, Object> proficiencyMap = qSectionSchemeMap.get(sectionKey);
+            proficiencyMap.forEach((key, value) -> {
+                if (key.equalsIgnoreCase("marksForQuestion")) {
+                    markMap.put(sectionKey, (Integer) value);
+                }
+            });
+        });
+        logger.info("Completed generating mark map");
+        return markMap;
+    }
+
+
+    /**
+     * Retrieves the parameter details for question types based on the given assessment hierarchy.
+     *
+     * @param assessmentHierarchy a map containing the assessment hierarchy details.
+     * @return a map containing the parameter details for the question types.
+     * @throws IOException if there is an error processing the question section schema.
+     */
+    private Map<String, Object> getParamDetailsForQTypes(Map<String, Object> hierarchySection,Map<String, Object> assessmentHierarchy,String hierarchySectionId) throws IOException {
+        logger.info("Starting getParamDetailsForQTypes with assessmentHierarchy: {}", assessmentHierarchy);
+        Map<String, Object> questionSetDetailsMap = new HashMap<>();
+        String assessmentType = (String) assessmentHierarchy.get(Constants.ASSESSMENT_TYPE);
+        questionSetDetailsMap.put(Constants.ASSESSMENT_TYPE, assessmentType);
+        questionSetDetailsMap.put(Constants.MINIMUM_PASS_PERCENTAGE, assessmentHierarchy.get(Constants.MINIMUM_PASS_PERCENTAGE));
+        questionSetDetailsMap.put(Constants.TOTAL_MARKS, hierarchySection.get(Constants.TOTAL_MARKS));
+        if (assessmentType.equalsIgnoreCase(Constants.QUESTION_WEIGHTAGE)) {
+            Map<String,Map<String, Object>> questionSectionSchema= (Map<String,Map<String, Object>>) hierarchySection.get(Constants.SECTION_LEVEL_DEFINITION);
+            questionSetDetailsMap.put(Constants.QUESTION_SECTION_SCHEME, generateMarkMap(questionSectionSchema));
+            questionSetDetailsMap.put(Constants.NEGATIVE_MARKING_PERCENTAGE, assessmentHierarchy.get(Constants.NEGATIVE_MARKING_PERCENTAGE));
+            questionSetDetailsMap.put("hierarchySectionId",hierarchySectionId);
+        }
+        logger.info("Completed getParamDetailsForQTypes with result: {}", questionSetDetailsMap);
+        return questionSetDetailsMap;
+    }
+
+    public SBApiResponse saveAssessmentAsync(Map<String, Object> submitRequest, String token,boolean editMode) {
+        logger.info("AssessmentServicev5Impl::saveAssessmentAsync... Started");
+        SBApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_READ_ASSESSMENT);
+        String assessmentIdentifier = (String) submitRequest.get(Constants.IDENTIFIER);
+        String errMsg = "";
+        try {
+            String userId = accessTokenValidator.fetchUserIdFromAccessToken(token);
             if (StringUtils.isBlank(userId)) {
                 updateErrorDetails(response, Constants.USER_ID_DOESNT_EXIST, HttpStatus.INTERNAL_SERVER_ERROR);
                 return response;
             }
-            Map<String, Object> res =assessUtilServ.fetchWheebox(userId);
-            if (res !=null && res.size() > 0) {
-                response.getResult().put(RESPONSE,res);
+            logger.info(String.format("saveAssessmentAsync... UserId: %s, AssessmentIdentifier: %s", userId, assessmentIdentifier));
+            Map<String, Object> assessmentAllDetail = null ;
+            // Step-1 : Read assessment using assessment Id from the Assessment Service
+            if(editMode) {
+                assessmentAllDetail = assessUtilServ.fetchHierarchyFromAssessServc(assessmentIdentifier,token);
+            }
+            else {
+                assessmentAllDetail = assessUtilServ
+                        .readAssessmentHierarchyFromCache(assessmentIdentifier,editMode,token);
+            }
+            if (MapUtils.isEmpty(assessmentAllDetail)) {
+                updateErrorDetails(response, Constants.ASSESSMENT_HIERARCHY_READ_FAILED,
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+                return response;
+            }
+            //Step-2 : If Practice Assessment return without saving
+            if (Constants.PRACTICE_QUESTION_SET
+                    .equalsIgnoreCase((String) assessmentAllDetail.get(Constants.PRIMARY_CATEGORY))||editMode) {
+                response.getResult().put(Constants.QUESTION_SET, readAssessmentLevelData(assessmentAllDetail));
+                return response;
+            }
+            // Step-3 : If read user submitted assessment
+            List<Map<String, Object>> existingDataList = assessUtilServ.readUserSubmittedAssessmentRecords(
+                    userId, assessmentIdentifier);
+
+            //Confirm whether the submitted request sections and questions match.
+            if (existingDataList.isEmpty() || existingDataList.size() <1) {
+                updateErrorDetails(response, Constants.ASSESSMENT_HIERARCHY_READ_FAILED,
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+                return response;
+            }
+            else {
+                logger.info("Assessment read... user has details... ");
+                Date existingAssessmentStartTime = (Date) (existingDataList.get(0)
+                        .get(Constants.START_TIME));
+                Date existingAssessmentEndTime = (Date) (existingDataList.get(0)
+                        .get(Constants.END_TIME));
+                Timestamp existingAssessmentEndTimeTimestamp = new Timestamp(
+                        existingAssessmentEndTime.getTime());
+                Timestamp existingAssessmentStarTimeTimestamp = new Timestamp(
+                        existingAssessmentStartTime.getTime());
+                List<Map<String, Object>> sectionListFromSubmitRequest = new ArrayList<>();
+                List<Map<String, Object>> hierarchySectionList = new ArrayList<>();
+                Map<String, Object> assessmentHierarchy = new HashMap<>();
+                Map<String, Object> existingAssessmentData = new HashMap<>();
+                 //errMsg = validateSubmitAssessmentRequest(submitRequest, userId, hierarchySectionList,
+                 //       sectionListFromSubmitRequest, assessmentHierarchy, existingAssessmentData,token,editMode);
+                if (StringUtils.isNotBlank(errMsg)) {
+                    updateErrorDetails(response, Constants.ASSESSMENT_HIERARCHY_READ_FAILED,
+                            HttpStatus.INTERNAL_SERVER_ERROR);
+                    return response;
+                }
+                if (existingAssessmentStarTimeTimestamp.compareTo(existingAssessmentEndTimeTimestamp) < 0
+                        && Constants.NOT_SUBMITTED.equalsIgnoreCase((String) existingDataList.get(0).get(Constants.STATUS))) {
+                    String questionSetFromAssessmentString = (String) existingDataList.get(0)
+                            .get(Constants.ASSESSMENT_READ_RESPONSE_KEY);
+                    Map<String, Object> questionSetFromAssessment = new Gson().fromJson(
+                            questionSetFromAssessmentString, new TypeToken<HashMap<String, Object>>() {
+                            }.getType());
+                    questionSetFromAssessment.put(Constants.START_TIME, existingAssessmentStarTimeTimestamp.getTime());
+                    questionSetFromAssessment.put(Constants.END_TIME,
+                            existingAssessmentStarTimeTimestamp.getTime());
+                    response.getResult().put(Constants.QUESTION_SET, questionSetFromAssessment);
+                    Boolean isAssessmentUpdatedToDB = assessmentRepository.updateUserAssesmentDataToDB(userId,
+                            (String) submitRequest.get(Constants.IDENTIFIER), null, null, null,
+                            existingAssessmentStarTimeTimestamp,submitRequest);
+                    if (Boolean.FALSE.equals(isAssessmentUpdatedToDB)) {
+                        errMsg = Constants.ASSESSMENT_DATA_START_TIME_NOT_UPDATED;
+                        response.getResult().put("ASSESSMENT_UPDATE", false);
+
+                    }
+                    else {
+                        response.getResult().put("ASSESSMENT_UPDATE", true);
+                    }
+
+                } else  {
+                    updateErrorDetails(response, Constants.ASSESSMENT_HIERARCHY_READ_FAILED,
+                            HttpStatus.INTERNAL_SERVER_ERROR);
+                    return response;
+                }
             }
         } catch (Exception e) {
-            String errMsg = String.format("Failed to process Assessment read response. Excption: %s", e.getMessage());
+            errMsg = String.format("Error while reading assessment. Exception: %s", e.getMessage());
+            logger.error(errMsg, e);
+        }
+        if (StringUtils.isNotBlank(errMsg)) {
+            updateErrorDetails(response, errMsg, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+    public SBApiResponse readAssessmentSavePoint(String assessmentIdentifier, String token,boolean editMode) {
+        logger.info("AssessmentServicev5Impl::readSaveAssessment... Started");
+        SBApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_READ_ASSESSMENT);
+        String errMsg = "";
+        try {
+            String userId = accessTokenValidator.fetchUserIdFromAccessToken(token);
+            if (StringUtils.isBlank(userId)) {
+                updateErrorDetails(response, Constants.USER_ID_DOESNT_EXIST, HttpStatus.INTERNAL_SERVER_ERROR);
+                return response;
+            }
+            logger.info(String.format("ReadSaveAssessment... UserId: %s, AssessmentIdentifier: %s", userId, assessmentIdentifier));
+            Map<String, Object> assessmentAllDetail = null ;
+            // Step-1 : Read assessment using assessment Id from the Assessment Service
+            if(editMode) {
+                assessmentAllDetail = assessUtilServ.fetchHierarchyFromAssessServc(assessmentIdentifier,token);
+            }
+            else {
+                assessmentAllDetail = assessUtilServ
+                        .readAssessmentHierarchyFromCache(assessmentIdentifier,editMode,token);
+            }
+            if (MapUtils.isEmpty(assessmentAllDetail)) {
+                updateErrorDetails(response, Constants.ASSESSMENT_HIERARCHY_READ_FAILED,
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+                return response;
+            }
+            //Step-2 : If Practice Assessment return without saving
+            if (Constants.PRACTICE_QUESTION_SET
+                    .equalsIgnoreCase((String) assessmentAllDetail.get(Constants.PRIMARY_CATEGORY))||editMode) {
+                response.getResult().put(Constants.QUESTION_SET, readAssessmentLevelData(assessmentAllDetail));
+                return response;
+            }
+            // Step-3 : If read user submitted assessment
+            List<Map<String, Object>> existingDataList = assessUtilServ.readUserSubmittedAssessmentRecords(
+                    userId, assessmentIdentifier);
+            Timestamp assessmentStartTime = new Timestamp(new Date().getTime());
+            if (existingDataList.isEmpty()) {
+                updateErrorDetails(response, Constants.ASSESSMENT_HIERARCHY_SAVE_NOT_AVBL,
+                        HttpStatus.BAD_REQUEST);
+                return response;
+            } else {
+                logger.info("Assessment read... user has details... ");
+                Date existingAssessmentEndTime = (Date) (existingDataList.get(0)
+                        .get(Constants.END_TIME));
+                Timestamp existingAssessmentEndTimeTimestamp = new Timestamp(
+                        existingAssessmentEndTime.getTime());
+                if (assessmentStartTime.compareTo(existingAssessmentEndTimeTimestamp) > 0
+                        && Constants.NOT_SUBMITTED.equalsIgnoreCase((String) existingDataList.get(0).get(Constants.STATUS))) {
+                    String questionSetFromAssessmentString = (String) existingDataList.get(0)
+                            .get(Constants.ASSESSMENT_SAVE_READ_RESPONSE_KEY);
+                    Map<String, Object> questionSetFromAssessment = new Gson().fromJson(
+                            questionSetFromAssessmentString, new TypeToken<HashMap<String, Object>>() {
+                            }.getType());
+                    response.getResult().put(Constants.QUESTION_SET, questionSetFromAssessment);
+                }
+                else {
+                    updateErrorDetails(response, Constants.ASSESSMENT_HIERARCHY_SAVE_NOT_AVBL,
+                            HttpStatus.BAD_REQUEST);
+                    return response;
+                }
+            }
+        } catch (Exception e) {
+            errMsg = String.format("Error while reading assessment. Exception: %s", e.getMessage());
+            logger.error(errMsg, e);
+        }
+        if (StringUtils.isNotBlank(errMsg)) {
             updateErrorDetails(response, errMsg, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return response;

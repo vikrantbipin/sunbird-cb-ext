@@ -187,8 +187,8 @@ public class CbExtServerProperties {
 	@Value("${cloud.storage.secret}")
 	private String cloudStorageSecret;
 
-	@Value("${cloud.storage.cephs3.endpoint}")
-	private String cloudStorageCephs3Endpoint;
+	@Value("${cloud.storage.endpoint}")
+	private String cloudStorageEndpoint;
 
 	@Value("${redis.host.name}")
 	private String redisHostName;
@@ -1355,12 +1355,12 @@ public class CbExtServerProperties {
 		this.cloudStorageSecret = cloudStorageSecret;
 	}
 
-	public String getCloudStorageCephs3Endpoint() {
-		return cloudStorageCephs3Endpoint;
+	public String getCloudStorageEndpoint() {
+		return cloudStorageEndpoint;
 	}
 
-	public void setCloudStorageCephs3Endpoint(String cloudStorageCephs3Endpoint) {
-		this.cloudStorageCephs3Endpoint = cloudStorageCephs3Endpoint;
+	public void setCloudStorageEndpoint(String cloudStorageEndpoint) {
+		this.cloudStorageEndpoint = cloudStorageEndpoint;
 	}
 
 	public String getUserUtilityTopic() {

@@ -64,7 +64,7 @@ public class StorageServiceImpl implements StorageService {
 		if (storageService == null) {
 			storageService = StorageServiceFactory.getStorageService(new StorageConfig(
 					serverProperties.getCloudStorageTypeName(), serverProperties.getCloudStorageKey(),
-					serverProperties.getCloudStorageSecret(), Option.apply(serverProperties.getCloudStorageCephs3Endpoint())));
+					serverProperties.getCloudStorageSecret().replace("\\n", "\n"), Option.apply(serverProperties.getCloudStorageEndpoint()), Option.empty()));
 		}
 	}
 

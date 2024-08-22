@@ -1104,6 +1104,21 @@ public class Constants {
 	public static final String CSV_FILE = ".csv";
 	public static final String XLSX_FILE = ".xlsx";
 	public static final String NO_OF_QUESTIONS = "noOfQuestions";
+  public static final String CADRE_DETAILS = "cadreDetails";
+	public static final String CADRE_CONFIG = "cadreConfig";
+	public static final String CIVIL_SERVICE_TYPE = "civilServiceType";
+	public static final String  SERVICE_TYPE = "serviceList";
+	public static final String CADRE_BATCH = "cadreBatch";
+	public static final String CONTROLLING_AUTHORITY = "cadreControllingAuthorityName";
+	public static final String CADRE_NAME = "cadreName";
+	public static final String CIVIL_SERVICE_NAME = "civilServiceName";
+	public static final String CADRE_LIST = "cadreList";
+	public static final String CIVIL_SERVICE_TYPE_ID = "civilServiceTypeId";
+	public static final String CIVIL_SERVICE_ID = "civilServiceId";
+	public static final String CADRE_ID = "cadreId";
+	public static final String CADRE_BATCH_START_YR = "startBatchYear";
+	public static final String CADRE_BATCH_END_YR = "endBatchYear";
+	public static final String CADRE_BATCH_EXCLUSION_YR = "exculsionYearList";
 	public static final String NLW_USER_LEADERBOARD = "nlw_user_leaderboard";
 	public static final String NLW_MDO_LEADERBOARD= "nlw_mdo_leaderboard";
 	public static final String API_HALL_OF_FAME_ORG_READ = "api.v1.halloffame.org.read";
@@ -1117,7 +1132,7 @@ public class Constants {
 	public static final String ERROR_WHILE_PROCESSING_USER_LEADERBOARD = "error while processing userLeaderBoard";
 	public static final String ERROR_WHILE_PROCESSING_MDO_LEADERBOARD = "error while processing mdoLeaderBoard";
 
-	private Constants() {
+  private Constants() {
 		throw new IllegalStateException("Utility class");
 	}
 

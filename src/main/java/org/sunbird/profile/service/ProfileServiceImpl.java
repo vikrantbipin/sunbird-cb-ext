@@ -190,13 +190,20 @@ public class ProfileServiceImpl implements ProfileService {
 					if (Constants.PERSONAL_DETAILS.equalsIgnoreCase(changedObj)) {
 						getModifiedPersonalDetails(profileDetailsMap.get(changedObj), requestData);
 					}
-					if (Constants.CADRE_DETAILS.equalsIgnoreCase(changedObj)){
-						String cadreErrMsg = validateCadreDetails(profileDetailsMap);
-						if (!cadreErrMsg.isEmpty()) {
-							response.setResponseCode(HttpStatus.BAD_REQUEST);
-							response.getParams().setStatus(Constants.FAILED);
-							response.getParams().setErrmsg(cadreErrMsg);
-							return response;
+					if (Constants.CADRE_DETAILS.equalsIgnoreCase(changedObj)) {
+						if (profileDetailsMap.get(Constants.CADRE_DETAILS) != null && profileDetailsMap.get(
+								Constants.CADRE_DETAILS) instanceof Map &&
+								!((Map<?, ?>) profileDetailsMap.get(Constants.CADRE_DETAILS)).isEmpty()) {
+							String cadreErrMsg = validateCadreDetails(profileDetailsMap);
+							if (!cadreErrMsg.isEmpty()) {
+								response.setResponseCode(HttpStatus.BAD_REQUEST);
+								response.getParams().setStatus(Constants.FAILED);
+								response.getParams().setErrmsg(cadreErrMsg);
+								return response;
+							}
+						} else if (profileDetailsMap.get(Constants.CADRE_DETAILS) instanceof Map &&
+								((Map<?, ?>) profileDetailsMap.get(Constants.CADRE_DETAILS)).isEmpty()) {
+							existingProfileDetails.put(changedObj, profileDetailsMap.get(changedObj));
 						}
 					}
 				}

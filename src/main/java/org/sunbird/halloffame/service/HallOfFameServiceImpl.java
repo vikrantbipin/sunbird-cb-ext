@@ -149,7 +149,7 @@ public class HallOfFameServiceImpl implements HallOfFameService {
     @Override
     public SBApiResponse getUserLeaderBoard(String orgId) {
         SBApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_HALL_OF_FAME_ORG_READ);
-        if (orgId == null || orgId.isEmpty()) {
+        if (orgId == null || StringUtils.isEmpty(orgId)) {
             setBadRequestResponse(response, Constants.INVALID_ORG_ID);
             return response;
         }
@@ -159,7 +159,7 @@ public class HallOfFameServiceImpl implements HallOfFameService {
         try {
             List<Map<String, Object>> userLeaderBoard = cassandraOperation.getRecordsByPropertiesWithoutFiltering(
                     Constants.KEYSPACE_SUNBIRD, Constants.NLW_USER_LEADERBOARD, propertyMap, null);
-            if (userLeaderBoard == null || userLeaderBoard.isEmpty()) {
+            if (userLeaderBoard == null || CollectionUtils.isEmpty(userLeaderBoard)) {
                 response.getParams().setErrmsg(Constants.NO_DATA_FOUND_FOR_THE_ORGANISATION);
                 response.getParams().setStatus(Constants.SUCCESS);
                 response.setResponseCode(HttpStatus.OK);
@@ -185,7 +185,7 @@ public class HallOfFameServiceImpl implements HallOfFameService {
         try {
             List<Map<String, Object>> mdoLeaderBoard = cassandraOperation.getRecordsByPropertiesWithoutFiltering(
                     Constants.KEYSPACE_SUNBIRD, Constants.NLW_MDO_LEADERBOARD, propertyMap, null);
-            if (mdoLeaderBoard == null || mdoLeaderBoard.isEmpty()) {
+            if (mdoLeaderBoard == null || CollectionUtils.isEmpty(mdoLeaderBoard)) {
                 response.getParams().setErrmsg(Constants.NO_DATA_FOUND);
                 response.getParams().setStatus(Constants.SUCCESS);
                 response.setResponseCode(HttpStatus.OK);

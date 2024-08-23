@@ -149,7 +149,7 @@ public class HallOfFameServiceImpl implements HallOfFameService {
     @Override
     public SBApiResponse getUserLeaderBoard(String orgId) {
         SBApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_HALL_OF_FAME_ORG_READ);
-        if (StringUtils.isEmpty(orgId)) {
+        if (StringUtils.isBlank(orgId)) {
             setBadRequestResponse(response, Constants.INVALID_ORG_ID);
             return response;
         }

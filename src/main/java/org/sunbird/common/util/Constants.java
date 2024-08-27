@@ -1104,6 +1104,13 @@ public class Constants {
 	public static final String CSV_FILE = ".csv";
 	public static final String XLSX_FILE = ".xlsx";
 	public static final String NO_OF_QUESTIONS = "noOfQuestions";
+	public static final String CQF_API_CREATE_ASSESSMENT = "api.create.cqfasssessment";
+	public static final String CQF_API_READ_ASSESSMENT = "api.read.cqfasssessment";
+	public static final String CQF_API_LIST_ASSESSMENT = "api.list.cqfasssessment";
+	public static final String CQF_API_UPDATE_ASSESSMENT = "api.update.cqfasssessment";
+	public static final String ACTIVE_STATUS = "activeStatus";
+	public static final String CQF_ASSESSMENT_TRACKING = "cqf_assessment_tracking";
+	public static final String CQF_ASSESSMENT_DATA = "cqfAssessmentData";
 
 	private Constants() {
 		throw new IllegalStateException("Utility class");

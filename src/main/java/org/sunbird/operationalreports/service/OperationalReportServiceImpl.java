@@ -196,6 +196,7 @@ public class OperationalReportServiceImpl implements OperationalReportService {
             InputStreamResource inputStreamResource = null;
             String reportFileName = "";
             if (serverProperties.getSpvChannelName().equalsIgnoreCase(channel)) {
+                logger.info("This is under spv: " + channel);
                 reportFileName = serverProperties.getSpvFullReportFileName();
                 String objectKey = serverProperties.getReportDownloadFolderName() + "/" + serverProperties.getSpvFullReportReportFolderName() + "/"
                         + serverProperties.getSpvFullReportFileName();
@@ -203,6 +204,7 @@ public class OperationalReportServiceImpl implements OperationalReportService {
                         Constants.OUTPUT_PATH, UUID.randomUUID());
                 inputStreamResource = getInputStreamForZip(reportFileName, objectKey, headers, sourceFolderPath);
             } else {
+                logger.info("This is under mdo: " + channel + " rootOrgId: " + rootOrg);
                 reportFileName = serverProperties.getOperationReportFileName();
                 String objectKey = serverProperties.getOperationalReportFolderName() + "/mdoid=" + rootOrg + "/"
                         + serverProperties.getOperationReportFileName();
@@ -486,7 +488,8 @@ public class OperationalReportServiceImpl implements OperationalReportService {
     }
 
     private InputStreamResource getInputStreamForZip(String fileName, String objectKey, HttpHeaders headers, String sourceFolderPath) throws IOException {
-
+        logger.info("The fileName is" + fileName);
+        logger.info("The ObjectKey is" + objectKey);
         storageService.download(serverProperties.getReportDownloadContainerName(), objectKey,
                 Constants.LOCAL_BASE_PATH, Option.apply(Boolean.FALSE));
         // Set the file path
@@ -507,6 +510,6 @@ public class OperationalReportServiceImpl implements OperationalReportService {
         createZipFolder(sourceFolderPath, fileName, password);
         // Prepare InputStreamResource for the file to be downloaded
         return new InputStreamResource(Files
-                .newInputStream(Paths.get(sourceFolderPath + "/" + serverProperties.getOperationReportFileName())));
+                .newInputStream(Paths.get(sourceFolderPath + "/" + fileName)));
     }
 }

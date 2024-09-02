@@ -191,32 +191,26 @@ public class OperationalReportServiceImpl implements OperationalReportService {
                     userInfoMap);
             Map<String, String> userDetailsMap = userInfoMap.get(userId);
             String rootOrg = userDetailsMap.get(Constants.ROOT_ORG_ID);
-            String objectKey = serverProperties.getOperationalReportFolderName() + "/mdoid=" + rootOrg + "/"
-                    + serverProperties.getOperationReportFileName();
-            // Download the file from storage
-            storageService.download(serverProperties.getReportDownloadContainerName(), objectKey,
-                    Constants.LOCAL_BASE_PATH, Option.apply(Boolean.FALSE));
-            // Set the file path
-            Path filePath = Paths.get(Constants.LOCAL_BASE_PATH + serverProperties.getOperationReportFileName());
-            // Set headers for the response
-            headers.add(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + serverProperties.getOperationReportFileName() + "\"");
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            // Prepare password for encryption
-            int passwordLength = serverProperties.getZipFilePasswordLength();
-            String password = generateAlphanumericPassword(passwordLength);
-            headers.add(Constants.PASSWORD, password);
-            // Unzip the downloaded file
-            sourceFolderPath = String.format("%s/%s/%s/%s", Constants.LOCAL_BASE_PATH, rootOrg,
-                    Constants.OUTPUT_PATH, UUID.randomUUID());
-            String destinationFolderPath = sourceFolderPath + Constants.UNZIP_PATH;
-            String zipFilePath = String.valueOf(filePath);
-            unlockZipFolder(zipFilePath, destinationFolderPath, serverProperties.getUnZipFilePassword());
-            // Encrypt the unzipped files and create a new zip file
-            createZipFolder(sourceFolderPath, serverProperties.getOperationReportFileName(), password);
-            // Prepare InputStreamResource for the file to be downloaded
-            InputStreamResource inputStreamResource = new InputStreamResource(Files
-                    .newInputStream(Paths.get(sourceFolderPath + "/" + serverProperties.getOperationReportFileName())));
+
+            String channel = userDetailsMap.get(Constants.CHANNEL);
+            InputStreamResource inputStreamResource = null;
+            String reportFileName = "";
+            if (serverProperties.getSpvChannelName().equalsIgnoreCase(channel)) {
+                reportFileName = serverProperties.getSpvFullReportFileName();
+                String objectKey = serverProperties.getReportDownloadFolderName() + "/" + serverProperties.getSpvFullReportReportFolderName() + "/"
+                        + serverProperties.getSpvFullReportFileName();
+                sourceFolderPath = String.format("%s/%s/%s/%s", Constants.LOCAL_BASE_PATH, rootOrg,
+                        Constants.OUTPUT_PATH, UUID.randomUUID());
+                inputStreamResource = getInputStreamForZip(reportFileName, objectKey, headers, sourceFolderPath);
+            } else {
+                reportFileName = serverProperties.getOperationReportFileName();
+                String objectKey = serverProperties.getOperationalReportFolderName() + "/mdoid=" + rootOrg + "/"
+                        + serverProperties.getOperationReportFileName();
+                sourceFolderPath = String.format("%s/%s/%s/%s", Constants.LOCAL_BASE_PATH, rootOrg,
+                        Constants.OUTPUT_PATH, UUID.randomUUID());
+                inputStreamResource = getInputStreamForZip(reportFileName, objectKey, headers, sourceFolderPath);
+            }
+
             // Return ResponseEntity with the file for download
             return ResponseEntity.ok()
                     .headers(headers)
@@ -489,5 +483,30 @@ public class OperationalReportServiceImpl implements OperationalReportService {
     private Date parseDateFromString(String dateString) {
         OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateString, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         return Date.from(offsetDateTime.toInstant());
+    }
+
+    private InputStreamResource getInputStreamForZip(String fileName, String objectKey, HttpHeaders headers, String sourceFolderPath) throws IOException {
+
+        storageService.download(serverProperties.getReportDownloadContainerName(), objectKey,
+                Constants.LOCAL_BASE_PATH, Option.apply(Boolean.FALSE));
+        // Set the file path
+        Path filePath = Paths.get(Constants.LOCAL_BASE_PATH + fileName);
+        // Set headers for the response
+        headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" + fileName + "\"");
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        // Prepare password for encryption
+        int passwordLength = serverProperties.getZipFilePasswordLength();
+        String password = generateAlphanumericPassword(passwordLength);
+        headers.add(Constants.PASSWORD, password);
+        // Unzip the downloaded file
+        String destinationFolderPath = sourceFolderPath + Constants.UNZIP_PATH;
+        String zipFilePath = String.valueOf(filePath);
+        unlockZipFolder(zipFilePath, destinationFolderPath, serverProperties.getUnZipFilePassword());
+        // Encrypt the unzipped files and create a new zip file
+        createZipFolder(sourceFolderPath, fileName, password);
+        // Prepare InputStreamResource for the file to be downloaded
+        return new InputStreamResource(Files
+                .newInputStream(Paths.get(sourceFolderPath + "/" + serverProperties.getOperationReportFileName())));
     }
 }

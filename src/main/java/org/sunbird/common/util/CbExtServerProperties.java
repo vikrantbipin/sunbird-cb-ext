@@ -768,6 +768,15 @@ public class CbExtServerProperties {
 	@Value("${sb.composite.v4.search}")
 	private String sbCompositeV4Search;
 
+	@Value("${kcm.framework.name}")
+	private String kcmFrameworkName;
+
+	@Value("${framework.read.endpoint}")
+	private String frameworkReadEndpoint;
+
+	@Value("${competencyV6.composite.search.course.category.filter}")
+	private String competencyV6SearchPrimaryCategoryFilter;
+
 	@Value("${spv.full.report.folder.name}")
 	private String spvFullReportReportFolderName;
 
@@ -2725,6 +2734,18 @@ public class CbExtServerProperties {
 		this.sbCompositeV4Search = sbCompositeV4Search;
 	}
 
+	public String getKcmFrameworkName() {
+		return kcmFrameworkName;
+	}
+
+	public String getFrameworkReadEndpoint() {
+		return frameworkReadEndpoint;
+	}
+
+	public List<String> getCompetencyV6SearchPrimaryCategoryFilter() {
+		return Arrays.asList(competencyV6SearchPrimaryCategoryFilter.split(",", -1));
+  }
+  
 	public String getSpvFullReportReportFolderName() {
 		return spvFullReportReportFolderName;
 	}

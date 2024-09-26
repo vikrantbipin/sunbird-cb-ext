@@ -939,16 +939,20 @@ public class CQFAssessmentServiceImpl implements CQFAssessmentService {
                     String identifier = question.get(Constants.IDENTIFIER).toString();
                     maxMarksForQn =  (int) maxMarksForQuestion.get(identifier);
                     achievedMarksForSection = achievedMarksForSection + achievedMarksPerQn;
-                    totalMarksForSection = totalMarksForSection + maxMarksForQn;
+                    if(!marked.get(0).equalsIgnoreCase(Constants.NOT_APPLICABLE)) {
+                        totalMarksForSection = totalMarksForSection + maxMarksForQn;
+                    }
                     question.put(Constants.ACQUIRED_SCORE,achievedMarksPerQn);
                 }
             }
             overallSectionPercentageScore = totalMarksForSection * ((double) questionSetDetailsMap.get(Constants.SECTION_WEIGHTAGE) / 100);
             achievedPercentageScore = achievedMarksForSection * ((double) questionSetDetailsMap.get(Constants.SECTION_WEIGHTAGE) / 100);
-            sectionLevelPercentage = (achievedMarksForSection/totalMarksForSection) * 100;
+            if (totalMarksForSection >= 0) {
+                sectionLevelPercentage = (achievedMarksForSection / totalMarksForSection) * 100;
+                resultMap.put(Constants.SECTION_LEVEL_PERCENTAGE, sectionLevelPercentage);
+            }
             resultMap.put(Constants.OVERALL_SECTION_PERCENTAGE_SCORE, overallSectionPercentageScore);
             resultMap.put(Constants.ACHIEVED_PERCENTAGE_SCORE, achievedPercentageScore);
-            resultMap.put(Constants.SECTION_LEVEL_PERCENTAGE, sectionLevelPercentage);
             resultMap.put(Constants.ACHIEVED_MARKS_FOR_SECTION,achievedMarksForSection);
             resultMap.put(Constants.TOTAL_MARKS_FOR_SECTION,totalMarksForSection);
             resultMap.put(Constants.CHILDREN, userQuestionList);
@@ -1012,9 +1016,9 @@ public class CQFAssessmentServiceImpl implements CQFAssessmentService {
     public Map<String, Object> getMaxMarksForQustions(Map<String, Object> optionWeightages) {
         logger.info("Retrieving max weightages for questions based on the questions...");
         Map<String, Object> ret = new HashMap<>();
-        int maxMarks = 0;
         for (Map.Entry<String, Object> entry : optionWeightages.entrySet()) {
             String identifier = entry.getKey();
+            int maxMarks = 0;
             Map<String, Integer> weightages = objectMapper.convertValue(entry.getValue(), new TypeReference<Map<String, Integer>>() {});
             for (Map.Entry<String, Integer> marksMap : weightages.entrySet()) {
                 int marks = 0;
@@ -1616,5 +1620,57 @@ public class CQFAssessmentServiceImpl implements CQFAssessmentService {
             logger.error(String.format("Failed to process the questionList request body. %s", e.getMessage()));
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * Process CQF post-publish event by updating the question set hierarchy in the Elasticsearch index.
+     *
+     * @param assessmentId the ID of the assessment
+     */
+    @Override
+    public void processCQFPostPublish(String assessmentId) {
+        logger.info("Inside the processCQFPostPublish method of CQFAssessmentServiceImpl");
+        // Get the CQF assessment data from the Elasticsearch index
+        Map<String, Object> esCQFAssessmentMap = getCQFAssessmentsByIds(assessmentId);
+        // Get the question set hierarchy data from the Elasticsearch index
+        Map<String, Object> questionsetMap = readQuestionSetHierarchy(assessmentId);
+        // Convert the question set hierarchy data to lowercase
+        Map<String, Object> lowerCaseMap = questionsetMap.entrySet().stream()
+                .collect(Collectors.toMap(entry -> entry.getKey().toLowerCase(), Map.Entry::getValue));
+        // Extract the question set data from the lowercase map
+        Map<String, Object> questionSetMap = objectMapper.convertValue(lowerCaseMap.get(Constants.QUESTION_SET_LOWER_CASE), new TypeReference<Map<String, Object>>() {
+        });
+        // Check if the CQF assessment exists in the Elasticsearch index
+        boolean isCQFAssessmentExist = !ObjectUtils.isEmpty(esCQFAssessmentMap);
+        // Get the 'children' ArrayList
+        ArrayList<Object> children = (ArrayList<Object>) questionSetMap.get("children");
+        // Iterate over the 'children' ArrayList
+        for (Object child : children) {
+            // Get the 'children' ArrayList of the current child
+            ArrayList<Object> childChildren = (ArrayList<Object>) ((HashMap) child).get("children");
+            // Iterate over the 'children' ArrayList of the current child
+            for (Object grandChild : childChildren) {
+                // Get the 'choices' string
+                String choices = (String) ((HashMap) grandChild).get("choices");
+                // Convert the 'choices' string to a HashMap using ObjectMapper
+                try {
+                    HashMap<String, Object> choicesMap = objectMapper.convertValue(objectMapper.readTree(choices), HashMap.class);
+                    // Replace the 'choices' string with the HashMap
+                    ((HashMap) grandChild).put("choices", choicesMap);
+                } catch (Exception e) {
+                    // Log the error message
+                    logger.error("Error converting choices to HashMap: {}", e.getMessage());
+                }
+
+            }
+        }
+        questionSetMap.put("children", children);
+        // Update or add the question set data to the Elasticsearch index
+        RestStatus status = updateOrAddEntity(serverProperties.getQuestionSetHierarchyIndex(), serverConfig.getEsProfileIndexType(), assessmentId, questionSetMap, isCQFAssessmentExist);
+        if (status.equals(RestStatus.CREATED) || status.equals(RestStatus.OK)) {
+            logger.info("Updated the question set hierarchy in the Elasticsearch index successfully.");
+        } else {
+            logger.info("There is a issue while updating the question set hierarchy in the Elasticsearch index.");
+        }
     }
 }

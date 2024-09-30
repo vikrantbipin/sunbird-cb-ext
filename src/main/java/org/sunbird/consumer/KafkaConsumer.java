@@ -153,6 +153,25 @@ public class KafkaConsumer {
         return svgContent.replaceAll("<image [^>]*>", "");
     }
 
+
+//    private File convertDataToPdf(String data) {
+//        try {
+//            Path tempFilePath = Files.createTempFile("/tmp/certificate", ".svg");
+//            File outputFile = tempFilePath.toFile();
+//            if (data.startsWith("data:image/svg+xml,")) {
+//                data = data.replaceFirst("data:image/svg\\+xml,", "");
+//            }
+//            String svgContent = URLDecoder.decode(data, StandardCharsets.UTF_8.name());
+//            try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+//                logger.info("writing converted file to ");
+//                writer.write(svgContent);
+//            }
+//            return outputFile;
+//        } catch (IOException e) {
+//            throw new RuntimeException("Failed to create SVG file", e);
+//        }
+//    }
+
     private String callCertRegistryApi(String certificateid) {
         logger.info("StorageServiceImpl :: callCertRegistryApi");
         try {

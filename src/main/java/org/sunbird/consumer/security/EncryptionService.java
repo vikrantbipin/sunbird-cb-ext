@@ -3,6 +3,7 @@ package org.sunbird.consumer.security;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.sunbird.common.util.CbExtServerProperties;
 
 import javax.crypto.Cipher;
@@ -10,6 +11,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 
+@Component
 public class EncryptionService {
     private static Logger log = LoggerFactory.getLogger(EncryptionService.class);
 

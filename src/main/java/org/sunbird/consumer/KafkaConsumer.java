@@ -2,7 +2,11 @@ package org.sunbird.consumer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.jcodings.exception.TranscoderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,16 +19,15 @@ import org.sunbird.cassandra.utils.CassandraOperation;
 import org.sunbird.common.model.SBApiResponse;
 import org.sunbird.common.util.CbExtServerProperties;
 import org.sunbird.common.util.Constants;
+import org.sunbird.consumer.security.EncryptionService;
 import org.sunbird.storage.service.StorageService;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,19 +51,24 @@ public class KafkaConsumer {
     @Autowired
     CbExtServerProperties serverProperties;
 
+    @Autowired
+    EncryptionService encryptionService;
+
     @KafkaListener(topics = "${spring.kafka.public.assessment.topic.name}", groupId = "${spring.kafka.public.assessment.consumer.group.id}")
     public void publicAssessmentCertificateEmailNotification(ConsumerRecord<String, String> data) throws IOException {
         logger.info("KafkaConsumer::publicAssessmentCertificateEmailNotification:topic name: {} and recievedData: {}", data.topic(), data.value());
         Map<String, Object> userCourseEnrollMap = mapper.readValue(data.value(), HashMap.class);
+        String email=userCourseEnrollMap.get(Constants.PUBLIC_USER_ID).toString();
+        String encryptedEmail=encryptionService.encryptData(email);
         Map<String, Object> propertyMap = new HashMap<>();
-        propertyMap.put(Constants.USER_ID, userCourseEnrollMap.get(Constants.USER_ID));
+        propertyMap.put(Constants.PUBLIC_USER_ID, email);
         propertyMap.put(Constants.PUBLIC_CONTEXT_ID, userCourseEnrollMap.get(Constants.PUBLIC_CONTEXT_ID));
         propertyMap.put(Constants.PUBLIC_ASSESSMENT_ID, userCourseEnrollMap.get(Constants.PUBLIC_ASSESSMENT_ID));
         List<Map<String, Object>> listOfMasterData = cassandraOperation.getRecordsByPropertiesWithoutFiltering(Constants.KEYSPACE_SUNBIRD, Constants.TABLE_PUBLIC_USER_ASSESSMENT_DATA, propertyMap, null, 1);
         if (!CollectionUtils.isEmpty(listOfMasterData)) {
             Map<String, Object> dbData = listOfMasterData.get(0);
             propertyMap.put(Constants.START_TIME,dbData.get(Constants.START_TIME));
-            String certlink = publicUserCertificateDownload("5d37353b-ae0a-46c1-a5eb-45ceb3aa6e92");
+            String certlink = publicUserCertificateDownload("3dd9abb1-503a-439f-83aa-b2263afd82ed");
             Map<String, Object> updatedMap = new HashMap<>();
             updatedMap.put(Constants.CERT_PUBLICURL, certlink);
             cassandraOperation.updateRecord(Constants.KEYSPACE_SUNBIRD, Constants.TABLE_PUBLIC_USER_ASSESSMENT_DATA, updatedMap, propertyMap);
@@ -94,33 +102,51 @@ public class KafkaConsumer {
     }
 
     private String publicUserCertificateDownload(String certificateid) {
+        logger.info("KafkaConsumer :: publicUserCertificateDownload");
         try {
             String data = callCertRegistryApi(certificateid);
-            File mFile = convertDataToPdf(data);
-            mFile = new File(System.currentTimeMillis() + "_" + mFile);
-            SBApiResponse response = storageService.uploadFile(mFile, serverProperties.getCloudProfileImageContainerName(), serverProperties.getPublicAssessmentCloudCertificateFolderName());
-            String downloadLink = response.getResult().get(Constants.URL).toString();
-            return downloadLink;
+            String svgInput=URLDecoder.decode(data);
+            String outputPath ="/tmp/"+certificateid+"_certificate.png";
+            convertSvgToPng(svgInput,outputPath);
+            File mFile=new File(outputPath);
+            if (mFile != null && mFile.exists()) {
+                SBApiResponse response = storageService.uploadFile(
+                        mFile,
+                        serverProperties.getCloudProfileImageContainerName(),
+                        serverProperties.getPublicAssessmentCloudCertificateFolderName()
+                );
+                return response.getResult().get(Constants.URL).toString();
+            }else{
+                logger.error("File Not found");
+                throw new RuntimeException("File Not found");
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private File convertDataToPdf(String data) {
-        try {
-            Path tempFilePath = Files.createTempFile("certificate_", ".svg");
-            File outputFile = tempFilePath.toFile();
-            if (data.startsWith("data:image/svg+xml,")) {
-                data = data.replaceFirst("data:image/svg\\+xml,", "");
-            }
-            String svgContent = URLDecoder.decode(data, StandardCharsets.UTF_8.name());
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
-                writer.write(svgContent);
-            }
-            return outputFile;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create PDF file", e);
-        }
+    private void convertSvgToPng(String svgString, String outputPath) throws IOException, TranscoderException, org.apache.batik.transcoder.TranscoderException {
+        svgString = cleanInvalidStyles(svgString);
+        svgString = removeImageTags(svgString);
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(svgString.getBytes(StandardCharsets.UTF_8));
+        TranscoderInput input = new TranscoderInput(inputStream);
+        OutputStream outputStream = new FileOutputStream(outputPath);
+        PNGTranscoder transcoder = new PNGTranscoder();
+        TranscoderOutput output = new TranscoderOutput(outputStream);
+        transcoder.transcode(input, output);
+        outputStream.flush();
+        outputStream.close();
+        inputStream.close();
+    }
+
+    public static String cleanInvalidStyles(String svgContent) {
+        // Replace 'display: inline-block;' with 'display: inline;' or 'display: block;'
+        return svgContent.replaceAll("display:\\s*inline-block;", "display: inline;"); // or "display: block;"
+    }
+
+    public static String removeImageTags(String svgContent) {
+        // Regular expression to match <image> elements in the SVG
+        return svgContent.replaceAll("<image [^>]*>", "");
     }
 
     private String callCertRegistryApi(String certificateid) {
@@ -136,7 +162,7 @@ public class KafkaConsumer {
                     JsonNode.class
             );
             if (response.getStatusCode().is2xxSuccessful()) {
-                String printUri = response.getBody().path("result").get("printUri").asText();
+                String printUri = response.getBody().path("result").get("printUri").asText().replace("data:image/svg+xml,","");
                 return printUri;
             } else {
                 throw new RuntimeException("Failed to retrieve externalId. Status code: " + response.getStatusCodeValue());

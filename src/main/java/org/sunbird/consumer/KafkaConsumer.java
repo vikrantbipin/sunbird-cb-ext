@@ -110,10 +110,11 @@ public class KafkaConsumer {
             convertSvgToPng(svgInput,outputPath);
             File mFile=new File(outputPath);
             if (mFile != null && mFile.exists()) {
+                logger.info("File name uploading into bucket {}",mFile.getAbsolutePath());
                 SBApiResponse response = storageService.uploadFile(
                         mFile,
-                        serverProperties.getCloudProfileImageContainerName(),
-                        serverProperties.getPublicAssessmentCloudCertificateFolderName()
+                        serverProperties.getPublicAssessmentCloudCertificateFolderName(),
+                        serverProperties.getCloudProfileImageContainerName()
                 );
                 return response.getResult().get(Constants.URL).toString();
             }else{

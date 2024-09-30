@@ -224,6 +224,21 @@
 			<artifactId>commons-csv</artifactId>
 			<version>1.9.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-transcoder</artifactId>
+			<version>1.14</version> <!-- Use the latest version available -->
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-dom</artifactId>
+			<version>1.14</version> <!-- Use the latest version available -->
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-all</artifactId>
+			<version>1.13</version>
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -794,11 +794,18 @@ public class CbExtServerProperties {
 	@Value("${spv.full.report.folder.name}")
 	private String spvFullReportReportFolderName;
 
+	public String getPublicAssessmentEncryptionKey() {
+		return publicAssessmentEncryptionKey;
+	}
+
 	@Value("${spv.full.report.file.name}")
 	private String spvFullReportFileName;
 
 	@Value("${public.assessment.cloud.certificate.folder.name}")
 	private String publicAssessmentCloudCertificateFolderName;
+
+	@Value("${public.assessment.encryption.key}")
+	private String publicAssessmentEncryptionKey;
 
 	public String getPublicAssessmentCloudCertificateFolderName() {
 		return publicAssessmentCloudCertificateFolderName;

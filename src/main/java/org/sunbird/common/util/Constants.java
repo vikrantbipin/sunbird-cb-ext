@@ -55,11 +55,12 @@ public class Constants {
 	public static final String IS_ACTIVE = "is_active";
 	public static final String ACCOUNT_EXPIRY_DATE = "account_expiry_date";
 	public static final String SOURCE_DATA = "source_data";
-	public static final String USER_ID = "userid";
+	public static final String USER_ID = "userId";
+	public static final String PUBLIC_USER_ID = "userid";
 	public static final String FILTERS = "filters";
 	public static final String CONTENT_ID = "content_id";
 	public static final String BATCH_ID = "batchId";
-	public static final String COURSE_ID = "courseid";
+	public static final String COURSE_ID = "courseId";
 	public static final String PUBLIC_CONTEXT_ID = "contextid";
 	public static final String ENROLMENT_TYPE = "enrollmenttype";
 	public static final String IDENTIFIER = "identifier";

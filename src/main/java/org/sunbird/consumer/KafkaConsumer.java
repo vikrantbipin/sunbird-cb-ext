@@ -61,14 +61,17 @@ public class KafkaConsumer {
         String email=userCourseEnrollMap.get(Constants.PUBLIC_USER_ID).toString();
         String encryptedEmail=encryptionService.encryptData(email);
         Map<String, Object> propertyMap = new HashMap<>();
-        propertyMap.put(Constants.PUBLIC_USER_ID, email);
+        propertyMap.put(Constants.PUBLIC_USER_ID, encryptedEmail);
         propertyMap.put(Constants.PUBLIC_CONTEXT_ID, userCourseEnrollMap.get(Constants.PUBLIC_CONTEXT_ID));
         propertyMap.put(Constants.PUBLIC_ASSESSMENT_ID, userCourseEnrollMap.get(Constants.PUBLIC_ASSESSMENT_ID));
         List<Map<String, Object>> listOfMasterData = cassandraOperation.getRecordsByPropertiesWithoutFiltering(Constants.KEYSPACE_SUNBIRD, Constants.TABLE_PUBLIC_USER_ASSESSMENT_DATA, propertyMap, null, 1);
         if (!CollectionUtils.isEmpty(listOfMasterData)) {
             Map<String, Object> dbData = listOfMasterData.get(0);
+            JsonNode jsonNode = mapper.convertValue(dbData, JsonNode.class);
+            String certificateId=jsonNode.get("issued_certificates").get("certificateid").asText();
+            logger.info("certificate id of the user {}",certificateId);
             propertyMap.put(Constants.START_TIME,dbData.get(Constants.START_TIME));
-            String certlink = publicUserCertificateDownload("3dd9abb1-503a-439f-83aa-b2263afd82ed");
+            String certlink = publicUserCertificateDownload(certificateId);
             Map<String, Object> updatedMap = new HashMap<>();
             updatedMap.put(Constants.CERT_PUBLICURL, certlink);
             cassandraOperation.updateRecord(Constants.KEYSPACE_SUNBIRD, Constants.TABLE_PUBLIC_USER_ASSESSMENT_DATA, updatedMap, propertyMap);

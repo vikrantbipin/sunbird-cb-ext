@@ -1153,7 +1153,7 @@ public class Constants {
 	public static final String COMMON_BATCH_EXCLUSION_YR = "commonBatchExclusionYearList";
 	public static final String CERT_PUBLICURL = "cert_publicurl";
 	public static final String TABLE_PUBLIC_USER_ASSESSMENT_DATA="public_user_assessment_data_test";
-  public static final String CHILD_ID = "childId";
+  	public static final String CHILD_ID = "childId";
 	public static final String INPUT_PATH = "input/";
 
 	private Constants() {

@@ -54,6 +54,9 @@ public class KafkaConsumer {
     @Autowired
     EncryptionService encryptionService;
 
+    @Autowired
+    KafkaProducer kafkaProducer;
+
     @KafkaListener(topics = "${spring.kafka.public.assessment.topic.name}", groupId = "${spring.kafka.public.assessment.consumer.group.id}")
     public void publicAssessmentCertificateEmailNotification(ConsumerRecord<String, String> data) throws IOException {
         logger.info("KafkaConsumer::publicAssessmentCertificateEmailNotification:topic name: {} and recievedData: {}", data.topic(), data.value());
@@ -71,36 +74,15 @@ public class KafkaConsumer {
             String certificateId=jsonNode.get("issued_certificates").get("certificateid").asText();
             logger.info("certificate id of the user {}",certificateId);
             propertyMap.put(Constants.START_TIME,dbData.get(Constants.START_TIME));
-            String certlink = publicUserCertificateDownload(certificateId);
+            String certlink = publicUserCertificateDownload("5d37353b-ae0a-46c1-a5eb-45ceb3aa6e92");
             Map<String, Object> updatedMap = new HashMap<>();
             updatedMap.put(Constants.CERT_PUBLICURL, certlink);
             cassandraOperation.updateRecord(Constants.KEYSPACE_SUNBIRD, Constants.TABLE_PUBLIC_USER_ASSESSMENT_DATA, updatedMap, propertyMap);
-            //callEmailNotifyApi(propertyMap);
-        }
-    }
-
-    private void callEmailNotifyApi(Map<String, Object> propertyMap) {
-        logger.info("StorageServiceImpl :: callCertRegistryApi");
-        try {
-            String url = serverProperties.getPublicAssessmentServiceHost() + serverProperties.getPublicAssessmentEmailNotifyUrl();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            String requestBody = mapper.writeValueAsString(propertyMap);  // Convert the propertyMap to JSON
-            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<JsonNode> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    entity,
-                    JsonNode.class
-            );
-            if (response.getStatusCode().is2xxSuccessful()) {
-                logger.info("Email notification sent successfully");
-            } else {
-                logger.error("error while sending mail");
-                throw new RuntimeException("Failed to retrieve externalId. Status code: " + response.getStatusCodeValue());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            Map<String, Object> notificationInput = new HashMap<>();
+            notificationInput.put(Constants.PUBLIC_USER_ID, encryptedEmail);
+            notificationInput.put(Constants.PUBLIC_CONTEXT_ID, userCourseEnrollMap.get(Constants.PUBLIC_CONTEXT_ID));
+            notificationInput.put(Constants.PUBLIC_ASSESSMENT_ID, userCourseEnrollMap.get(Constants.PUBLIC_ASSESSMENT_ID));
+            kafkaProducer.push(serverProperties.getSpringKafkaPublicAssessmentNotificationTopicName(),notificationInput);
         }
     }
 
@@ -152,25 +134,6 @@ public class KafkaConsumer {
         // Regular expression to match <image> elements in the SVG
         return svgContent.replaceAll("<image [^>]*>", "");
     }
-
-
-//    private File convertDataToPdf(String data) {
-//        try {
-//            Path tempFilePath = Files.createTempFile("/tmp/certificate", ".svg");
-//            File outputFile = tempFilePath.toFile();
-//            if (data.startsWith("data:image/svg+xml,")) {
-//                data = data.replaceFirst("data:image/svg\\+xml,", "");
-//            }
-//            String svgContent = URLDecoder.decode(data, StandardCharsets.UTF_8.name());
-//            try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
-//                logger.info("writing converted file to ");
-//                writer.write(svgContent);
-//            }
-//            return outputFile;
-//        } catch (IOException e) {
-//            throw new RuntimeException("Failed to create SVG file", e);
-//        }
-//    }
 
     private String callCertRegistryApi(String certificateid) {
         logger.info("StorageServiceImpl :: callCertRegistryApi");

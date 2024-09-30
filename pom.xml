@@ -252,6 +252,17 @@
             <artifactId>batik-anim</artifactId>
             <version>1.14</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-transcoder</artifactId>
+            <version>1.14</version> <!-- Or the latest version -->
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>fop</artifactId>
+            <version>2.6</version>
+        </dependency>
+
     </dependencies>
 
     <build>

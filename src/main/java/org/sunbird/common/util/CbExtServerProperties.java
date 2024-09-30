@@ -675,6 +675,20 @@ public class CbExtServerProperties {
 	@Value("${public.assessment.encryption.key}")
 	private String publicAssessmentEncryptionKey;
 
+	@Value("${spring.kafka.public.assessment.notification.topic.name}")
+	private String springKafkaPublicAssessmentNotificationTopicName;
+
+	@Value("${public.user.assessment.table.name}")
+	private String publicUserAssessmentTableName;
+
+	public String getPublicUserAssessmentTableName() {
+		return publicUserAssessmentTableName;
+	}
+
+	public String getSpringKafkaPublicAssessmentNotificationTopicName() {
+		return springKafkaPublicAssessmentNotificationTopicName;
+	}
+
 	public String getPublicAssessmentEncryptionKey() {
 		return publicAssessmentEncryptionKey;
 	}

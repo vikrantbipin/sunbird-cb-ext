@@ -68,7 +68,7 @@ public class KafkaConsumer {
         if (!CollectionUtils.isEmpty(listOfMasterData)) {
             Map<String, Object> dbData = listOfMasterData.get(0);
             propertyMap.put(Constants.START_TIME,dbData.get(Constants.START_TIME));
-            String certlink = publicUserCertificateDownload("5d37353b-ae0a-46c1-a5eb-45ceb3aa6e92");
+            String certlink = publicUserCertificateDownload("3dd9abb1-503a-439f-83aa-b2263afd82ed");
             Map<String, Object> updatedMap = new HashMap<>();
             updatedMap.put(Constants.CERT_PUBLICURL, certlink);
             cassandraOperation.updateRecord(Constants.KEYSPACE_SUNBIRD, Constants.TABLE_PUBLIC_USER_ASSESSMENT_DATA, updatedMap, propertyMap);
@@ -105,8 +105,9 @@ public class KafkaConsumer {
         logger.info("KafkaConsumer :: publicUserCertificateDownload");
         try {
             String data = callCertRegistryApi(certificateid);
+            String svgInput=URLDecoder.decode(data);
             String outputPath ="/tmp/"+certificateid+"_certificate.png";
-            convertSvgToPng(data,outputPath);
+            convertSvgToPng(svgInput,outputPath);
             File mFile=new File(outputPath);
             if (mFile != null && mFile.exists()) {
                 SBApiResponse response = storageService.uploadFile(
@@ -122,7 +123,6 @@ public class KafkaConsumer {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     private void convertSvgToPng(String svgString, String outputPath) throws IOException, TranscoderException, org.apache.batik.transcoder.TranscoderException {
@@ -148,25 +148,6 @@ public class KafkaConsumer {
         // Regular expression to match <image> elements in the SVG
         return svgContent.replaceAll("<image [^>]*>", "");
     }
-
-
-//    private File convertDataToPdf(String data) {
-//        try {
-//            Path tempFilePath = Files.createTempFile("/tmp/certificate", ".svg");
-//            File outputFile = tempFilePath.toFile();
-//            if (data.startsWith("data:image/svg+xml,")) {
-//                data = data.replaceFirst("data:image/svg\\+xml,", "");
-//            }
-//            String svgContent = URLDecoder.decode(data, StandardCharsets.UTF_8.name());
-//            try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
-//                logger.info("writing converted file to ");
-//                writer.write(svgContent);
-//            }
-//            return outputFile;
-//        } catch (IOException e) {
-//            throw new RuntimeException("Failed to create SVG file", e);
-//        }
-//    }
 
     private String callCertRegistryApi(String certificateid) {
         logger.info("StorageServiceImpl :: callCertRegistryApi");

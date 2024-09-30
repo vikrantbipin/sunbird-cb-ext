@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
@@ -174,7 +175,17 @@ public class CQFAssessmentServiceImpl implements CQFAssessmentService {
         SearchResponse searchResponse;
         try {
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+            BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+            boolQueryBuilder.must(QueryBuilders.matchAllQuery());
+            // Check if filter is present in the request body
+            if (requestBody.containsKey(Constants.FILTER)) {
+                List<String> filterColumns = (List<String>) requestBody.get(Constants.FILTER);
+                // Iterate over each filter column and add it to the bool query builder
+                for (String column : filterColumns) {
+                    boolQueryBuilder.must(QueryBuilders.termQuery(column, requestBody.get(column)));
+                }
+            }
+            searchSourceBuilder.query(boolQueryBuilder);
             searchSourceBuilder.sort(new FieldSortBuilder(requestBody.get(Constants.FIELD).toString()).order(SortOrder.DESC));
             searchSourceBuilder.from((Integer.parseInt(requestBody.get(Constants.CURRENT_PAGE).toString()) - 1) * Integer.parseInt(requestBody.get(Constants.PAGE_SIZE).toString()));
             searchSourceBuilder.size(Integer.parseInt(requestBody.get(Constants.PAGE_SIZE).toString()));

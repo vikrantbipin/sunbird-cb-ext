@@ -672,6 +672,20 @@ public class CbExtServerProperties {
 	@Value("${public-assessment-email-notify-url}")
 	private String publicAssessmentEmailNotifyUrl;
 
+	@Value("${public.assessment.encryption.key}")
+	private String publicAssessmentEncryptionKey;
+
+	public String getPublicAssessmentEncryptionKey() {
+		return publicAssessmentEncryptionKey;
+	}
+
+	public String getPublicAssessmentCloudCertificateFolderName() {
+		return publicAssessmentCloudCertificateFolderName;
+	}
+
+	@Value("${public.assessment.cloud.certificate.folder.name}")
+	private String publicAssessmentCloudCertificateFolderName;
+
 	public String getPublicAssessmentServiceHost() {
 		return publicAssessmentServiceHost;
 	}
@@ -794,22 +808,8 @@ public class CbExtServerProperties {
 	@Value("${spv.full.report.folder.name}")
 	private String spvFullReportReportFolderName;
 
-	public String getPublicAssessmentEncryptionKey() {
-		return publicAssessmentEncryptionKey;
-	}
-
 	@Value("${spv.full.report.file.name}")
 	private String spvFullReportFileName;
-
-	@Value("${public.assessment.cloud.certificate.folder.name}")
-	private String publicAssessmentCloudCertificateFolderName;
-
-	@Value("${public.assessment.encryption.key}")
-	private String publicAssessmentEncryptionKey;
-
-	public String getPublicAssessmentCloudCertificateFolderName() {
-		return publicAssessmentCloudCertificateFolderName;
-	}
 
 	public boolean qListFromCacheEnabled() {
 		return qListFromCacheEnabled;

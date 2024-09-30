@@ -55,11 +55,12 @@ public class Constants {
 	public static final String IS_ACTIVE = "is_active";
 	public static final String ACCOUNT_EXPIRY_DATE = "account_expiry_date";
 	public static final String SOURCE_DATA = "source_data";
-	public static final String USER_ID = "userId";
+	public static final String USER_ID = "userid";
 	public static final String FILTERS = "filters";
 	public static final String CONTENT_ID = "content_id";
 	public static final String BATCH_ID = "batchId";
-	public static final String COURSE_ID = "courseId";
+	public static final String COURSE_ID = "courseid";
+	public static final String PUBLIC_CONTEXT_ID = "contextid";
 	public static final String ENROLMENT_TYPE = "enrollmenttype";
 	public static final String IDENTIFIER = "identifier";
 	public static final String START_DATE = "startDate";
@@ -323,6 +324,7 @@ public class Constants {
 	public static final String SEARCHES = "searches";
 	public static final String QUESTION_ID = "qs_id_";
 	public static final String ASSESSMENT_ID = "assess_id_";
+	public static final String PUBLIC_ASSESSMENT_ID = "assessmentid";
 	public static final String EDITOR_STATE = "editorState";
 	public static final String CHOICES = "choices";
 	public static final String ANSWER = "answer";
@@ -1148,6 +1150,8 @@ public class Constants {
 	public static final String COMMON_BATCH_START_YR = "commonBatchStartYear";
 	public static final String COMMON_BATCH_END_YR = "commonBatchEndYear";
 	public static final String COMMON_BATCH_EXCLUSION_YR = "commonBatchExclusionYearList";
+	public static final String TABLE_PUBLIC_USER_ASSESSMENT_DATA = "public_user_assessment_data_test1";
+	public static final String CERT_PUBLICURL = "cert_publicurl";
 
 	private Constants() {
 		throw new IllegalStateException("Utility class");

@@ -179,10 +179,14 @@ public class CQFAssessmentServiceImpl implements CQFAssessmentService {
             boolQueryBuilder.must(QueryBuilders.matchAllQuery());
             // Check if filter is present in the request body
             if (requestBody.containsKey(Constants.FILTER)) {
-                List<String> filterColumns = (List<String>) requestBody.get(Constants.FILTER);
+                List<Map<String, Object>> filterColumns = (List<Map<String, Object>>) requestBody.get(Constants.FILTER);
                 // Iterate over each filter column and add it to the bool query builder
-                for (String column : filterColumns) {
-                    boolQueryBuilder.must(QueryBuilders.termQuery(column, requestBody.get(column)));
+                for (Map<String, Object> filter : filterColumns) {
+                    BoolQueryBuilder filterQueryBuilder = QueryBuilders.boolQuery();
+                    for (Map.Entry<String, Object> entry : filter.entrySet()) {
+                        filterQueryBuilder.must(QueryBuilders.termQuery(entry.getKey(), entry.getValue()));
+                    }
+                    boolQueryBuilder.must(filterQueryBuilder);
                 }
             }
             searchSourceBuilder.query(boolQueryBuilder);

@@ -678,6 +678,13 @@ public class CbExtServerProperties {
 	@Value("${spring.kafka.public.assessment.notification.topic.name}")
 	private String springKafkaPublicAssessmentNotificationTopicName;
 
+	@Value("${public.user.assessment.table.name}")
+	private String publicUserAssessmentTableName;
+
+	public String getPublicUserAssessmentTableName() {
+		return publicUserAssessmentTableName;
+	}
+
 	public String getSpringKafkaPublicAssessmentNotificationTopicName() {
 		return springKafkaPublicAssessmentNotificationTopicName;
 	}

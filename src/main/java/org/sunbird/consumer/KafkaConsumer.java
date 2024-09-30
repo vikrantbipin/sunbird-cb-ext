@@ -2,9 +2,11 @@ package org.sunbird.consumer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.batik.transcoder.Transcoder;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
+import org.apache.fop.svg.PDFTranscoder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.jcodings.exception.TranscoderException;
 import org.slf4j.Logger;
@@ -61,28 +63,33 @@ public class KafkaConsumer {
     public void publicAssessmentCertificateEmailNotification(ConsumerRecord<String, String> data) throws IOException {
         logger.info("KafkaConsumer::publicAssessmentCertificateEmailNotification:topic name: {} and recievedData: {}", data.topic(), data.value());
         Map<String, Object> userCourseEnrollMap = mapper.readValue(data.value(), HashMap.class);
-        String email=userCourseEnrollMap.get(Constants.PUBLIC_USER_ID).toString();
-        String encryptedEmail=encryptionService.encryptData(email);
+        String email = userCourseEnrollMap.get(Constants.PUBLIC_USER_ID).toString();
+        String encryptedEmail = encryptionService.encryptData(email);
         Map<String, Object> propertyMap = new HashMap<>();
         propertyMap.put(Constants.PUBLIC_USER_ID, encryptedEmail);
         propertyMap.put(Constants.PUBLIC_CONTEXT_ID, userCourseEnrollMap.get(Constants.PUBLIC_CONTEXT_ID));
         propertyMap.put(Constants.PUBLIC_ASSESSMENT_ID, userCourseEnrollMap.get(Constants.PUBLIC_ASSESSMENT_ID));
-        List<Map<String, Object>> listOfMasterData = cassandraOperation.getRecordsByPropertiesWithoutFiltering(Constants.KEYSPACE_SUNBIRD, Constants.TABLE_PUBLIC_USER_ASSESSMENT_DATA, propertyMap, null, 1);
+        List<Map<String, Object>> listOfMasterData = cassandraOperation.getRecordsByPropertiesWithoutFiltering(Constants.KEYSPACE_SUNBIRD, serverProperties.getPublicUserAssessmentTableName(), propertyMap, null, 1);
         if (!CollectionUtils.isEmpty(listOfMasterData)) {
             Map<String, Object> dbData = listOfMasterData.get(0);
             JsonNode jsonNode = mapper.convertValue(dbData, JsonNode.class);
-            String certificateId=jsonNode.get("issued_certificates").get("certificateid").asText();
-            logger.info("certificate id of the user {}",certificateId);
-            propertyMap.put(Constants.START_TIME,dbData.get(Constants.START_TIME));
-            String certlink = publicUserCertificateDownload("5d37353b-ae0a-46c1-a5eb-45ceb3aa6e92");
+            String certificateId="";
+            if(jsonNode.path("issued_certificates").get("certificateid")!=null) {
+                 certificateId = jsonNode.get("issued_certificates").get("certificateid").asText();
+                logger.info("certificate id of the user {}",certificateId);
+            }else{
+                 certificateId = "5d37353b-ae0a-46c1-a5eb-45ceb3aa6e92";
+            }
+            propertyMap.put(Constants.START_TIME, dbData.get(Constants.START_TIME));
+            String certlink = publicUserCertificateDownload(certificateId);
             Map<String, Object> updatedMap = new HashMap<>();
             updatedMap.put(Constants.CERT_PUBLICURL, certlink);
-            cassandraOperation.updateRecord(Constants.KEYSPACE_SUNBIRD, Constants.TABLE_PUBLIC_USER_ASSESSMENT_DATA, updatedMap, propertyMap);
+            cassandraOperation.updateRecord(Constants.KEYSPACE_SUNBIRD, serverProperties.getPublicUserAssessmentTableName(), updatedMap, propertyMap);
             Map<String, Object> notificationInput = new HashMap<>();
-            notificationInput.put(Constants.PUBLIC_USER_ID, encryptedEmail);
+            notificationInput.put(Constants.PUBLIC_USER_ID, email);
             notificationInput.put(Constants.PUBLIC_CONTEXT_ID, userCourseEnrollMap.get(Constants.PUBLIC_CONTEXT_ID));
             notificationInput.put(Constants.PUBLIC_ASSESSMENT_ID, userCourseEnrollMap.get(Constants.PUBLIC_ASSESSMENT_ID));
-            kafkaProducer.push(serverProperties.getSpringKafkaPublicAssessmentNotificationTopicName(),notificationInput);
+            kafkaProducer.push(serverProperties.getSpringKafkaPublicAssessmentNotificationTopicName(), notificationInput);
         }
     }
 
@@ -90,7 +97,7 @@ public class KafkaConsumer {
         logger.info("KafkaConsumer :: publicUserCertificateDownload");
         try {
             String data = callCertRegistryApi(certificateid);
-            String svgInput=URLDecoder.decode(data);
+            String svgInput = URLDecoder.decode(data);
             String outputPath ="/tmp/"+certificateid+"_certificate.png";
             convertSvgToPng(svgInput,outputPath);
             File mFile=new File(outputPath);
@@ -148,7 +155,7 @@ public class KafkaConsumer {
                     JsonNode.class
             );
             if (response.getStatusCode().is2xxSuccessful()) {
-                String printUri = response.getBody().path("result").get("printUri").asText().replace("data:image/svg+xml,","");
+                String printUri = response.getBody().path("result").get("printUri").asText().replace("data:image/svg+xml,", "");
                 return printUri;
             } else {
                 throw new RuntimeException("Failed to retrieve externalId. Status code: " + response.getStatusCodeValue());

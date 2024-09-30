@@ -666,6 +666,20 @@ public class CbExtServerProperties {
 	@Value("${cert-registry-certificate-download-url}")
 	private String certRegistryCertificateDownloadUrl;
 
+	@Value("${public-assessment-service-host}")
+	private String publicAssessmentServiceHost;
+
+	@Value("${public-assessment-email-notify-url}")
+	private String publicAssessmentEmailNotifyUrl;
+
+	public String getPublicAssessmentServiceHost() {
+		return publicAssessmentServiceHost;
+	}
+
+	public String getPublicAssessmentEmailNotifyUrl() {
+		return publicAssessmentEmailNotifyUrl;
+	}
+
 	@Value("${digilocker-issuer-id}")
 	private String digiLockerIssuerId;
 
@@ -782,6 +796,13 @@ public class CbExtServerProperties {
 
 	@Value("${spv.full.report.file.name}")
 	private String spvFullReportFileName;
+
+	@Value("${public.assessment.cloud.certificate.folder.name}")
+	private String publicAssessmentCloudCertificateFolderName;
+
+	public String getPublicAssessmentCloudCertificateFolderName() {
+		return publicAssessmentCloudCertificateFolderName;
+	}
 
 	public boolean qListFromCacheEnabled() {
 		return qListFromCacheEnabled;

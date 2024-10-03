@@ -805,15 +805,6 @@ public class CbExtServerProperties {
 	@Value("${competencyV6.composite.search.course.category.filter}")
 	private String competencyV6SearchPrimaryCategoryFilter;
 
-	@Value("${kcm.framework.name}")
-	private String kcmFrameworkName;
-
-	@Value("${framework.read.endpoint}")
-	private String frameworkReadEndpoint;
-
-	@Value("${competencyV6.composite.search.course.category.filter}")
-	private String competencyV6SearchPrimaryCategoryFilter;
-
 	@Value("${spv.full.report.folder.name}")
 	private String spvFullReportReportFolderName;
 

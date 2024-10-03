@@ -1179,6 +1179,7 @@ public class Constants {
   	public static final String CHILD_ID = "childId";
 	public static final String INPUT_PATH = "input/";
 	public static final String COURSE_ID_LOWER = "courseid";
+	public static final String FAILED_TO_UPDATE_PROGRESS = "Failed to update progress of assessment using content state update API";
 	public static final String OVERALL_SECTION_PERCENTAGE_SCORE = "overallSectionPercentageScore";
 	public static final String ACHIEVED_PERCENTAGE_SCORE = "achievedPercentageScore";
 	public static final String SECTION_LEVEL_PERCENTAGE = "sectionLevelPercentage";

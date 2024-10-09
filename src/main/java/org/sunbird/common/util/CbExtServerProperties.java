@@ -916,6 +916,9 @@ public class CbExtServerProperties {
 	@Value("${questionSet.publish}")
 	private String questionSetPublish;
 
+	@Value("${cios.logs.cloud.folder.name}")
+	private String ciosFileLogsCloudFolderName;
+
 	public String getCiosCloudIconFolderName() {
 		return ciosCloudIconFolderName;
 	}
@@ -1904,7 +1907,7 @@ public class CbExtServerProperties {
 	}
 
 	public void setSbEsHostList(String sbEsHost) {
-		this.sbEsHostList = sbEsHostList;
+		this.sbEsHostList = sbEsHost;
 	}
 
 	public String getSbEsUser() {
@@ -2521,10 +2524,6 @@ public class CbExtServerProperties {
 
 	public String getEhrmsDetailUrl() {
 		return ehrmsDetailUrl;
-	}
-
-	public void setEhrmsDetailUrl(SBApiResponse response) {
-		this.ehrmsDetailUrl = ehrmsDetailUrl;
 	}
 
 	public void setEhrmsDetailUrl(String ehrmsDetailUrl) {
@@ -3156,6 +3155,14 @@ public class CbExtServerProperties {
 
 	public void setCqfAssessmentPostPublishTopic(String cqfAssessmentPostPublishTopic) {
 		this.cqfAssessmentPostPublishTopic = cqfAssessmentPostPublishTopic;
+	}
+
+	public String getCiosFileLogsCloudFolderName() {
+		return ciosFileLogsCloudFolderName;
+	}
+
+	public void setCiosFileLogsCloudFolderName(String ciosFileLogsCloudFolderName) {
+		this.ciosFileLogsCloudFolderName = ciosFileLogsCloudFolderName;
 	}
 
 }

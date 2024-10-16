@@ -3,6 +3,7 @@ package org.sunbird.common.util;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class Constants {
 	public static final String UUID = "wid";
@@ -1224,6 +1225,27 @@ public class Constants {
 	public static final String NOT_APPLICABLE = "Not Applicable";
 	public static final String CURRENT_PAGE = "currentPage";
 	public static final String FILTER = "filter";
+	public static final String BP_REPORT_GENERATE_API ="api.generate.bp.report";
+	public static final String BP_REPORT_DOWNLOAD_API ="api.download.bp.report";
+	public static final String PROFILE_SURVEY_ID = "profileSurveyId";
+	public static final String COURSE_ID_MISSING = "Course ID is missing";
+	public static final String BATCH_ID_MISSING = "Batch ID is missing";
+	public static final String PROFILE_SURVEY_ID_MISSING = "Profile Survey ID is missing";
+	public static final String ORG_ID_KEY_MISSING = "Org ID is missing";
+	public static final String BP_ENROLMENT_REPORT_TABLE= "bp_enrolment_report";
+	public static final String DOWNLOAD_LINK= "downloadLink";
+	public static final String COMPLETED_UPPER_CASE = "COMPLETED";
+	public static final String MOTHER_TONGUE = "motherTongue";
+	public static final String FORM_ID = "formId";
+	public static final String DATA_OBJECT = "dataObject";
+	public static final String ENROLMENT_STATUS = "enrolmentStatus";
+	public static final String BATCH_ATTRIBUTES = "batchAttributes";
+	public static final String USER_PROFILE_FIELDS = "userProfileFileds";
+	public static final String BATCH_ENROL_MANDATORY_PROFILE_FIELDS ="bpEnrolMandatoryProfileFields";
+	public static final String DOR = "dor";
+
+
+
 
 	private Constants() {
 		throw new IllegalStateException("Utility class");

@@ -916,6 +916,22 @@ public class CbExtServerProperties {
 	@Value("${questionSet.publish}")
 	private String questionSetPublish;
 
+	@Value("${kafka.topic.bp.report}")
+	private String kafkaTopicBPReport;
+
+	@Value("${igot.es.user.form.index}")
+	private String igotEsUserFormIndex;
+
+	@Value("${es.form.index.type}")
+	private String esFormIndexType;
+
+	@Value("${bp.user.enrolment.report.container.name}")
+	private String bpEnrolmentReportContainerName;
+
+	@Value("${course.batch.read}")
+	private String batchReadPath;
+
+
 	public String getCiosCloudIconFolderName() {
 		return ciosCloudIconFolderName;
 	}
@@ -3158,4 +3174,43 @@ public class CbExtServerProperties {
 		this.cqfAssessmentPostPublishTopic = cqfAssessmentPostPublishTopic;
 	}
 
+	public String getKafkaTopicBPReport() {
+		return kafkaTopicBPReport;
+	}
+
+	public void setKafkaTopicBPReport(String kafkaTopicBPReport) {
+		this.kafkaTopicBPReport = kafkaTopicBPReport;
+	}
+
+	public String getIgotEsUserFormIndex() {
+		return igotEsUserFormIndex;
+	}
+
+	public void setIgotEsUserFormIndex(String igotEsUserFormIndex) {
+		this.igotEsUserFormIndex = igotEsUserFormIndex;
+	}
+
+	public String getEsFormIndexType() {
+		return esFormIndexType;
+	}
+
+	public void setEsFormIndexType(String esFormIndexType) {
+		this.esFormIndexType = esFormIndexType;
+	}
+
+	public String getBpEnrolmentReportContainerName() {
+		return bpEnrolmentReportContainerName;
+	}
+
+	public void setBpEnrolmentReportContainerName(String bpEnrolmentReportContainerName) {
+		this.bpEnrolmentReportContainerName = bpEnrolmentReportContainerName;
+	}
+
+	public String getBatchReadPath() {
+		return batchReadPath;
+	}
+
+	public void setBatchReadPath(String batchReadPath) {
+		this.batchReadPath = batchReadPath;
+	}
 }

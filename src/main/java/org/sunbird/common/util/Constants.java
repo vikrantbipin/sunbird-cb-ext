@@ -1229,6 +1229,12 @@ public class Constants {
 	public static final String EVENT_ID = "eventId";
 	public static final String ENROLLED_DATE_KEY_LOWER = "enrolled_date";
 	public static final String DATE_TIME = "dateTime";
+	public static final String EVENT_BATCH_TABLE_NAME = "event_batch";
+	public static final String COMPLETED_ON ="completedOn";
+	public static final String START_DATE_COLUMN = "start_date";
+	public static final String END_DATE_COLUMN = "end_date";
+	public static final String BATCH_ATTRIBUTES_COLUMN="batch_attributes";
+
 
 	private Constants() {
 		throw new IllegalStateException("Utility class");

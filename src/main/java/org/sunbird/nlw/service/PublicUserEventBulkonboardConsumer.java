@@ -27,6 +27,8 @@ import org.sunbird.storage.service.StorageService;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -51,6 +53,9 @@ public class PublicUserEventBulkonboardConsumer {
 
     @Autowired
     CertificateServiceImpl certificateService;
+
+    @Autowired
+    ClaimEventKarmaPointsServiceImpl karmaPointsService;
 
 
     @KafkaListener(topics = "${public.user.event.bulk.onboard.topic}", groupId = "${public.user.event.bulk.onboard.topic.group}")
@@ -109,6 +114,7 @@ public class PublicUserEventBulkonboardConsumer {
         int processedCount = 0;
         int failedCount = 0;
         Map<String, String> emailUserIdMap = new HashMap<>();
+        Map<String, Object> eventDetails = new HashMap<>();
         String columnName = "Email";
 
         File file = new File(Constants.LOCAL_BASE_PATH + inputData.get(Constants.FILE_NAME));
@@ -135,12 +141,13 @@ public class PublicUserEventBulkonboardConsumer {
 
 
             getUserIdList(csvParser, columnName, emailUserIdMap);
+            getEventDetails(eventId, batchId, eventDetails);
 
             try (CSVParser csvParser2 = new CSVParser(new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)),
                     CSVFormat.newFormat(serverProperties.getCsvDelimiter()).withFirstRecordAsHeader())) {
                 for (CSVRecord record : csvParser2.getRecords()) {
                     totalRecordsCount++;
-                    Map<String, String> updatedRecord = processRecord(record, expectedFieldCount, eventId, batchId, emailUserIdMap);
+                    Map<String, String> updatedRecord = processRecord(record, expectedFieldCount, eventId, batchId, emailUserIdMap, eventDetails);
                     updatedRecords.add(updatedRecord);
 
                     if ("FAILED".equalsIgnoreCase(updatedRecord.get("Status"))) {
@@ -163,13 +170,40 @@ public class PublicUserEventBulkonboardConsumer {
     }
 
     private void getUserIdList(CSVParser csvParser, String columnName, Map<String, String> emailUserIdMap) throws IOException {
-        List<String> emailList = new ArrayList<>();
-        for (CSVRecord record : csvParser) {
-            String columnValue = record.get(columnName);
-            emailList.add(columnValue);
+        if (csvParser == null) {
+            throw new IllegalArgumentException("Invalid input: CSV parser must not be null or empty.");
         }
-        emailUserIdMap.putAll(getUserId(Constants.EMAIL, emailList));
+
+        List<String> emailList = new ArrayList<>();
+        try {
+            for (CSVRecord record : csvParser) {
+                // Validate if the record contains the required column
+                if (record.isMapped(columnName)) {
+                    String columnValue = record.get(columnName);
+                    if (StringUtils.isNotBlank(columnValue)) {
+                        emailList.add(columnValue.trim());
+                    } else {
+                        logger.warn("Skipping empty value for column {} in record {}", columnName, record.getRecordNumber());
+                    }
+                } else {
+                    logger.error("Column '{}' not found in CSV file.", columnName);
+                    throw new IllegalArgumentException("CSV file does not contain the specified column: " + columnName);
+                }
+            }
+            logger.debug("Fetched {} email addresses from CSV.", emailList.size());
+
+            if (!emailList.isEmpty()) {
+                emailUserIdMap.putAll(getUserId(Constants.EMAIL, emailList));
+                logger.debug("User IDs successfully retrieved for the email list.");
+            } else {
+                logger.warn("No valid email addresses found in the CSV.");
+            }
+        } catch (Exception e) {
+            logger.error("Error processing CSV file to fetch user IDs", e);
+            throw new IOException("Failed to process CSV file", e);
+        }
     }
+
 
     /**
      * Cleans up the headers by removing any surrounding quotes.
@@ -181,7 +215,7 @@ public class PublicUserEventBulkonboardConsumer {
     /**
      * Processes a single CSV record. Returns the updated record with status and error details.
      */
-    private Map<String, String> processRecord(CSVRecord record, int expectedFieldCount, String eventId, String batchId, Map<String, String> emailUserIdMap) throws IOException {
+    private Map<String, String> processRecord(CSVRecord record, int expectedFieldCount, String eventId, String batchId, Map<String, String> emailUserIdMap, Map<String, Object> eventDetails) throws IOException {
         Map<String, String> updatedRecord = new LinkedHashMap<>(record.toMap());
 
         if (record.size() > expectedFieldCount) {
@@ -206,7 +240,7 @@ public class PublicUserEventBulkonboardConsumer {
             return updatedRecord;
         }
 
-        SBApiResponse enrollmentResponse = enrollNLWEvent(userId, eventId, batchId);
+        SBApiResponse enrollmentResponse = enrollNLWEvent(userId, eventId, batchId, eventDetails);
         if (!Constants.SUCCESS.equalsIgnoreCase((String) enrollmentResponse.get(Constants.RESPONSE))) {
             markRecordAsFailed(updatedRecord, "Failed to enroll");
             return updatedRecord;
@@ -214,6 +248,7 @@ public class PublicUserEventBulkonboardConsumer {
 
         double completionPercentage = 100.0;
         certificateService.generateCertificateEventAndPushToKafka(userId, eventId, batchId, completionPercentage);
+        karmaPointsService.generateKarmaPointEventAndPushToKafka(userId, eventId, batchId);
         logger.info("Successfully enrolled user: userId = {}, email = {}", userId, email);
         return updatedRecord;
     }
@@ -317,7 +352,7 @@ public class PublicUserEventBulkonboardConsumer {
         return emailUserIdMap;
     }
 
-    private SBApiResponse enrollNLWEvent(String userId, String eventId, String batchId) {
+    private SBApiResponse enrollNLWEvent(String userId, String eventId, String batchId, Map<String, Object> eventDetails) {
 
         int defaultStatus = 2;
         int defaultProgress = 100;
@@ -332,12 +367,11 @@ public class PublicUserEventBulkonboardConsumer {
         request.put(Constants.STATUS, defaultStatus);
         request.put(Constants.PROGRESS, defaultProgress);
         request.put(Constants.COMPLETION_PERCENTAGE, defaultCompletionPercentage);
+        request.put(Constants.ENROLLED_DATE_KEY_LOWER, eventDetails.get(Constants.START_DATE));
+        request.put(Constants.DATE_TIME, eventDetails.get(Constants.START_DATE));
+        request.put(Constants.COMPLETED_ON, eventDetails.get(Constants.END_DATE));
 
-        Date enrolledDate = new Date();
-        request.put(Constants.ENROLLED_DATE_KEY_LOWER, enrolledDate);
-        request.put(Constants.DATE_TIME, enrolledDate);
-
-        logger.info("Attempting to enroll user: userId = {}, eventId = {}, batchId = {}, enrolledDate = {}", userId, eventId, batchId, enrolledDate);
+        logger.info("Attempting to enroll user: userId = {}, eventId = {}, batchId = {}", userId, eventId, batchId);
 
         SBApiResponse response;
         try {
@@ -362,8 +396,7 @@ public class PublicUserEventBulkonboardConsumer {
         compositeKey.put(Constants.BATCH_ID, batchId);
 
         List<Map<String, Object>> enrolmentRecords = cassandraOperation.getRecordsByProperties(Constants.SUNBIRD_COURSES_KEY_SPACE_NAME, serverProperties.getUserEventEnrolmentTable(), compositeKey, null);
-        boolean isEnrolled = CollectionUtils.isNotEmpty(enrolmentRecords);
-        return isEnrolled;
+        return CollectionUtils.isNotEmpty(enrolmentRecords);
     }
 
     private List<String> validateReceivedKafkaMessage(Map<String, String> inputDataMap) {
@@ -421,5 +454,51 @@ public class PublicUserEventBulkonboardConsumer {
         }
     }
 
+    private void getEventDetails(String eventId, String batchId, Map<String, Object> eventDetails) {
+        logger.debug("Fetching event batch details for eventId: {} and batchId: {}", eventId, batchId);
+        Map<String, Object> propertiesMap = new HashMap<>();
+        propertiesMap.put(Constants.EVENT_ID, eventId);
+        propertiesMap.put(Constants.BATCH_ID, batchId);
+        try {
+            List<Map<String, Object>> eventBatchDetails = cassandraOperation.getRecordsByProperties(Constants.SUNBIRD_COURSES_KEY_SPACE_NAME, Constants.EVENT_BATCH_TABLE_NAME, propertiesMap, null);
+            if (CollectionUtils.isNotEmpty(eventBatchDetails)) {
+                Map<String, Object> eventBatch = eventBatchDetails.get(0);
+                String batchAttributesStr = (String) eventBatch.get(Constants.BATCH_ATTRIBUTES_COLUMN);
+                Map<String, Object> batchAttributes = objectMapper.readValue(batchAttributesStr, new TypeReference<Map<String, Object>>() {
+                });
+                eventDetails.put(Constants.START_DATE, prepareEventDateTime((Date) eventBatch.get(Constants.START_DATE_COLUMN), (String) batchAttributes.get(Constants.START_TIME_KEY)));
+                eventDetails.put(Constants.END_DATE, prepareEventDateTime((Date) eventBatch.get(Constants.END_DATE_COLUMN), (String) batchAttributes.get(Constants.END_TIME_KEY)));
+            } else {
+                logger.warn("No event batch details found for eventId: {} and batchId: {}", eventId, batchId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while fetching event batch details for eventId: {} and batchId: {}", eventId, batchId, e);
+            throw new RuntimeException("Unable to fetch event details", e);
+        }
+    }
+
+    private Date prepareEventDateTime(Date date, String time) {
+        if (date == null || time == null || time.isEmpty()) {
+            throw new IllegalArgumentException("Date and time must not be null or empty.");
+        }
+        LocalDateTime localDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ssXXXXX");
+        OffsetTime timePart;
+
+        try {
+            timePart = OffsetTime.parse(time, timeFormatter);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid time format: " + time, e);
+        }
+        ZonedDateTime combinedDateTime = localDateTime.atZone(ZoneId.systemDefault())
+                .withHour(timePart.getHour())
+                .withMinute(timePart.getMinute())
+                .withSecond(timePart.getSecond())
+                .withNano(timePart.getNano())
+                .withZoneSameInstant(timePart.getOffset());
+
+        Timestamp resultTimestamp = Timestamp.from(combinedDateTime.toInstant());
+        return new Date(resultTimestamp.getTime()); // Convert Timestamp to Date
+    }
 
 }

@@ -65,7 +65,7 @@ public class PublicUserEventBulkonboardServiceImpl implements PublicUserEventBul
                     serverConfig.getPublicUserEventBulkOnboardTable(), uploadedFile);
 
             if (!Constants.SUCCESS.equalsIgnoreCase((String) insertResponse.get(Constants.RESPONSE))) {
-                setErrorData(response, "Failed to update database with even user bulk onboard file details.");
+                setErrorData(response, "Failed to update database with event user bulk onboard file details.");
                 return response;
             }
 

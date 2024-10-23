@@ -319,12 +319,19 @@ public class PublicUserEventBulkonboardConsumer {
 
     private SBApiResponse enrollNLWEvent(String userId, String eventId, String batchId) {
 
+        int defaultStatus = 2;
+        int defaultProgress = 100;
+        float defaultCompletionPercentage = 100;
+
         Map<String, Object> request = new HashMap<>();
         request.put(Constants.USER_ID, userId);
         request.put(Constants.CONTENT_ID_KEY, eventId);
         request.put(Constants.CONTEXT_ID_CAMEL, eventId);
         request.put(Constants.BATCH_ID, batchId);
         request.put(Constants.ACTIVE, true);
+        request.put(Constants.STATUS, defaultStatus);
+        request.put(Constants.PROGRESS, defaultProgress);
+        request.put(Constants.COMPLETION_PERCENTAGE, defaultCompletionPercentage);
 
         Date enrolledDate = new Date();
         request.put(Constants.ENROLLED_DATE_KEY_LOWER, enrolledDate);

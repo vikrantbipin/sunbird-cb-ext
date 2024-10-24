@@ -247,9 +247,8 @@ public class PublicUserEventBulkonboardConsumer {
         }
 
         double completionPercentage = 100.0;
-        certificateService.generateCertificateEventAndPushToKafka(userId, eventId, batchId, completionPercentage);
-      //  Karma points are generated inside event-cert generator flink job
-      //  karmaPointsService.generateKarmaPointEventAndPushToKafka(userId, eventId, batchId);
+        certificateService.generateCertificateEventAndPushToKafka(userId, eventId, batchId, completionPercentage, eventDetails);
+        karmaPointsService.generateKarmaPointEventAndPushToKafka(userId, eventId, batchId, eventDetails);
         logger.info("Successfully enrolled user: userId = {}, email = {}", userId, email);
         return updatedRecord;
     }

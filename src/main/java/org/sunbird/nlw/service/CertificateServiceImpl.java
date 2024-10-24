@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.sunbird.common.util.CbExtServerProperties;
+import org.sunbird.common.util.Constants;
 
 import java.io.IOException;
 import java.util.*;
@@ -24,18 +25,18 @@ public class CertificateServiceImpl {
 
     ObjectMapper mapper = new ObjectMapper();
 
-    public void generateCertificateEventAndPushToKafka(String userId, String eventId, String batchId, double completionPercentage) throws IOException {
+    public void generateCertificateEventAndPushToKafka(String userId, String eventId, String batchId, double completionPercentage, Map<String, Object> eventDetails) throws IOException {
         List<String> userIds = Collections.singletonList(userId);
-        String eventJson = generateIssueCertificateEvent(batchId, eventId, userIds, completionPercentage, userId);
+        String eventJson = generateIssueCertificateEvent(batchId, eventId, userIds, completionPercentage, userId, eventDetails);
         if (pushTokafkaEnabled) {
             String topic = serverProperties.getUserIssueCertificateForEventTopic();
             kafkaTemplate.send(topic, userId, eventJson);
         }
     }
 
-    public String generateIssueCertificateEvent(String batchId, String eventId, List<String> userIds, double eventCompletionPercentage, String userId) throws JsonProcessingException {
-        // Generate current timestamp (in milliseconds)
-        long ets = System.currentTimeMillis();
+    public String generateIssueCertificateEvent(String batchId, String eventId, List<String> userIds, double eventCompletionPercentage, String userId, Map<String, Object> eventDetails) throws JsonProcessingException {
+
+        long ets = ((Date) eventDetails.get(Constants.END_DATE)).getTime() - 10 * 1000;
 
         // Generate a UUID for the message ID
         String mid = UUID.randomUUID().toString();

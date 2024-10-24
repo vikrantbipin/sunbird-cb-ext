@@ -934,6 +934,9 @@ public class CbExtServerProperties {
 	@Value("${public.user.event.bulkonboard.table}")
 	private String publicUserEventBulkOnboardTable;
 
+	@Value("${user.event.karma.point.topic}")
+	private String userEventKarmaPointTopic;
+
 	public String getCiosCloudIconFolderName() {
 		return ciosCloudIconFolderName;
 	}
@@ -3218,5 +3221,13 @@ public class CbExtServerProperties {
 
 	public void setPublicUserEventBulkOnboardTable(String publicUserEventBulkOnboardTable) {
 		this.publicUserEventBulkOnboardTable = publicUserEventBulkOnboardTable;
+	}
+
+	public String getUserEventKarmaPointTopic() {
+		return userEventKarmaPointTopic;
+	}
+
+	public void setUserEventKarmaPointTopic(String userEventKarmaPointTopic) {
+		this.userEventKarmaPointTopic = userEventKarmaPointTopic;
 	}
 }
